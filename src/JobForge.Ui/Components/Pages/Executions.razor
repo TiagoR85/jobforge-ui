@@ -1,0 +1,175 @@
+@page "/executions"
+@implements IAsyncDisposable
+@inject IJobForgeClient Client
+@inject NavigationManager Nav
+@inject IOptions<UiOptions> UiOpt
+
+<PageTitle>jobforge — executions</PageTitle>
+
+<h1>Executions</h1>
+
+<div class="mb-3 d-flex gap-2 align-items-center">
+    <label class="form-label mb-0" for="status-filter">Status</label>
+    <select id="status-filter" class="form-select" style="max-width: 12rem"
+            data-testid="status-filter" value="@(Status ?? "")" @onchange="OnStatusChanged">
+        <option value="">All</option>
+        <option value="pending">pending</option>
+        <option value="running">running</option>
+        <option value="succeeded">succeeded</option>
+        <option value="failed">failed</option>
+        <option value="dead">dead</option>
+    </select>
+    <a class="btn btn-outline-secondary" href="jobs/new">New job</a>
+</div>
+
+@if (_error is not null)
+{
+    <div class="alert alert-warning" role="alert" data-testid="error-alert">@_error</div>
+}
+
+@if (_loading && _pageResult is null)
+{
+    <p><em>Loading…</em></p>
+}
+else if (_pageResult is not null && _pageResult.Items.Count == 0)
+{
+    <p data-testid="executions-empty">No executions match the current filter.</p>
+}
+else if (_pageResult is not null)
+{
+    <p data-testid="page-info" class="text-body-secondary">
+        Page @_page of @TotalPages (@_pageResult.Total total)
+    </p>
+    <table class="table table-sm align-middle">
+        <thead>
+            <tr><th>Scheduled</th><th>Job</th><th>Status</th><th>Attempt</th><th>HTTP</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var execution in _pageResult.Items)
+            {
+                <tr data-testid="execution-row">
+                    <td><a href="@($"/executions/{execution.Id}")">@execution.ScheduledAt.ToString("u")</a></td>
+                    <td class="font-monospace">@execution.JobId.ToString()[..8]</td>
+                    <td><StatusBadge Status="@execution.Status" /></td>
+                    <td>@execution.Attempt</td>
+                    <td>@(execution.HttpStatusCode?.ToString() ?? "—")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div class="btn-group">
+        <button class="btn btn-outline-secondary" data-testid="pagination-prev"
+                disabled="@(_page <= 1)" @onclick="PrevAsync">Prev</button>
+        <button class="btn btn-outline-secondary" data-testid="pagination-next"
+                disabled="@(!HasMore)" @onclick="NextAsync">Next</button>
+    </div>
+}
+
+@code {
+    private const int PageSize = 20;
+
+    private ExecutionPage? _pageResult;
+    private bool _loading;
+    private string? _error;
+    private int _page = 1;
+    private CancellationTokenSource? _cts;
+
+    private string? Status
+    {
+        get
+        {
+            var query = new Uri(Nav.Uri).Query;
+            if (query.Length <= 1) return null;
+            foreach (var pair in query[1..].Split('&'))
+            {
+                var kv = pair.Split('=', 2);
+                if (kv.Length == 2 && kv[0] == "status" && !string.IsNullOrWhiteSpace(kv[1]))
+                {
+                    return Uri.UnescapeDataString(kv[1]);
+                }
+            }
+            return null;
+        }
+    }
+
+    private int TotalPages => _pageResult is null
+        ? 1
+        : Math.Max(1, (int)Math.Ceiling(_pageResult.Total / (double)_pageResult.Size));
+
+    private bool HasMore => _pageResult is not null && _page * _pageResult.Size < _pageResult.Total;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _cts = new CancellationTokenSource();
+        _ = RefreshLoopAsync(_cts.Token);
+    }
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    private async Task RefreshLoopAsync(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(UiOpt.Value.RefreshSeconds), ct);
+                await LoadAsync();
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            _pageResult = await Client.GetExecutionsAsync(Status, _page, PageSize);
+            _error = null;
+        }
+        catch (JobForgeApiException ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void OnStatusChanged(ChangeEventArgs e)
+    {
+        _page = 1;
+        var status = e.Value as string;
+        Nav.NavigateTo(string.IsNullOrWhiteSpace(status)
+            ? "/executions"
+            : $"/executions?status={Uri.EscapeDataString(status)}");
+    }
+
+    private async Task NextAsync()
+    {
+        _page++;
+        await LoadAsync();
+    }
+
+    private async Task PrevAsync()
+    {
+        if (_page > 1)
+        {
+            _page--;
+            await LoadAsync();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_cts is not null)
+        {
+            await _cts.CancelAsync();
+            _cts.Dispose();
+        }
+    }
+}

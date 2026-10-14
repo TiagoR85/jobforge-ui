@@ -28,6 +28,8 @@ builder.Services.AddSingleton<IJobForgeClient>(sp => new JobForgeClient(
     sp.GetRequiredService<IHttpClientFactory>().CreateClient("JobForgeApi"),
     sp.GetRequiredService<JobForgeTokenProvider>()));
 
+builder.Services.Configure<UiOptions>(builder.Configuration.GetSection("Ui"));
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
