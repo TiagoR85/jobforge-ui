@@ -1,0 +1,132 @@
+@page "/jobs/new"
+@using System.Text.Json
+@using Cronos
+@inject IJobForgeClient Client
+@inject NavigationManager Nav
+
+<PageTitle>jobforge — new job</PageTitle>
+
+<h1>New job</h1>
+
+@if (_formError is not null)
+{
+    <div class="alert alert-warning" role="alert" data-testid="form-error">@_formError</div>
+}
+
+<div class="mb-3" style="max-width: 40rem">
+    <label class="form-label" for="job-name">Name</label>
+    <input id="job-name" class="form-control" data-testid="job-name-input" @bind="_name" />
+    @if (_nameError is not null)
+    {
+        <div class="text-danger" data-testid="name-error">@_nameError</div>
+    }
+</div>
+
+<div class="mb-3" style="max-width: 40rem">
+    <label class="form-label" for="job-url">Webhook URL</label>
+    <input id="job-url" class="form-control" data-testid="job-url-input" @bind="_url" />
+    @if (_urlError is not null)
+    {
+        <div class="text-danger" data-testid="url-error">@_urlError</div>
+    }
+</div>
+
+<div class="mb-3" style="max-width: 40rem">
+    <label class="form-label" for="job-payload">Payload JSON (optional)</label>
+    <textarea id="job-payload" class="form-control" rows="4" data-testid="job-payload-input" @bind="_payload"></textarea>
+    @if (_payloadError is not null)
+    {
+        <div class="text-danger" data-testid="payload-error">@_payloadError</div>
+    }
+</div>
+
+<div class="mb-3" style="max-width: 40rem">
+    <label class="form-label" for="job-cron">Cron (optional — Cronos syntax, e.g. */5 * * * *)</label>
+    <input id="job-cron" class="form-control" data-testid="job-cron-input" @bind="_cron" />
+    @if (_cronError is not null)
+    {
+        <div class="text-danger" data-testid="cron-error">@_cronError</div>
+    }
+</div>
+
+<button class="btn btn-primary" data-testid="submit-button" disabled="@_saving" @onclick="SubmitAsync">Create job</button>
+<a class="btn btn-outline-secondary ms-2" href="">Cancel</a>
+
+@code {
+    private string _name = "";
+    private string _url = "";
+    private string _payload = "";
+    private string _cron = "";
+    private bool _saving;
+    private string? _nameError;
+    private string? _urlError;
+    private string? _payloadError;
+    private string? _cronError;
+    private string? _formError;
+
+    private async Task SubmitAsync()
+    {
+        _nameError = _urlError = _payloadError = _cronError = _formError = null;
+
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _nameError = "Name is required.";
+        }
+        if (!Uri.TryCreate(_url, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            _urlError = "A valid http(s) URL is required.";
+        }
+        if (!string.IsNullOrWhiteSpace(_payload))
+        {
+            try
+            {
+                JsonDocument.Parse(_payload).Dispose();
+            }
+            catch (JsonException)
+            {
+                _payloadError = "Payload must be valid JSON.";
+            }
+        }
+        if (!string.IsNullOrWhiteSpace(_cron))
+        {
+            try
+            {
+                CronExpression.Parse(_cron);
+            }
+            catch (CronFormatException)
+            {
+                _cronError = "Invalid cron expression (Cronos syntax: 5 or 6 fields).";
+            }
+        }
+
+        if (_nameError is not null || _urlError is not null || _payloadError is not null || _cronError is not null)
+        {
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            await Client.CreateJobAsync(
+                new CreateJobRequest(
+                    _name.Trim(),
+                    _url.Trim(),
+                    string.IsNullOrWhiteSpace(_payload) ? null : _payload,
+                    null,
+                    string.IsNullOrWhiteSpace(_cron) ? null : _cron.Trim(),
+                    null,
+                    null),
+                Guid.NewGuid().ToString("N"));
+            Nav.NavigateTo("/");
+        }
+        catch (JobForgeApiException ex)
+        {
+            _formError = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}
