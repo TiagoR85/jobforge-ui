@@ -1,0 +1,110 @@
+@page "/executions/{Id:guid}"
+@using System.Globalization
+@inject IJobForgeClient Client
+
+<PageTitle>jobforge — execution</PageTitle>
+
+<h1>Execution</h1>
+
+@if (_loading && _execution is null)
+{
+    <p><em>Loading…</em></p>
+}
+else if (_error is not null && _execution is null)
+{
+    <div class="alert alert-warning" role="alert" data-testid="error-alert">@_error</div>
+}
+else if (_execution is null)
+{
+    <div class="alert alert-secondary" data-testid="execution-not-found">
+        Execution not found — it does not exist (or was purged).
+    </div>
+}
+else
+{
+    <div class="d-flex gap-3 align-items-center mb-3 flex-wrap">
+        <span data-testid="detail-status"><StatusBadge Status="@_execution.Status" /></span>
+        <span>attempt <strong data-testid="attempt">@_execution.Attempt</strong></span>
+        @if (_execution.HttpStatusCode is not null)
+        {
+            <span>HTTP <strong data-testid="http-status">@_execution.HttpStatusCode</strong></span>
+        }
+        @if (Duration is not null)
+        {
+            <span>duration <strong data-testid="duration">@Duration</strong></span>
+        }
+        <button class="btn btn-sm btn-outline-secondary" data-testid="refresh-button"
+                @onclick="LoadAsync">Refresh</button>
+    </div>
+
+    <div class="list-group mb-3" style="max-width: 40rem">
+        <div class="list-group-item d-flex justify-content-between" data-testid="timeline-item">
+            <span>scheduled</span>
+            <span>@_execution.ScheduledAt.ToString("u")</span>
+        </div>
+        @if (_execution.StartedAt is not null)
+        {
+            <div class="list-group-item d-flex justify-content-between" data-testid="timeline-item">
+                <span>started</span>
+                <span>@_execution.StartedAt.Value.ToString("u")</span>
+            </div>
+        }
+        @if (_execution.FinishedAt is not null)
+        {
+            <div class="list-group-item d-flex justify-content-between" data-testid="timeline-item">
+                <span>finished</span>
+                <span>@_execution.FinishedAt.Value.ToString("u")</span>
+            </div>
+        }
+    </div>
+
+    @if (_execution.Error is not null)
+    {
+        <div class="alert alert-danger" role="alert" data-testid="error-text">@_execution.Error</div>
+    }
+
+    <p class="text-body-secondary mb-0">
+        job <span class="font-monospace">@_execution.JobId</span>
+        · trace <span class="font-monospace">@_execution.TraceId</span>
+    </p>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private ExecutionDto? _execution;
+    private bool _loading;
+    private string? _error;
+
+    private string? Duration
+    {
+        get
+        {
+            if (_execution?.StartedAt is null || _execution.FinishedAt is null) return null;
+            var span = _execution.FinishedAt.Value - _execution.StartedAt.Value;
+            return span.TotalSeconds < 1
+                ? $"{span.TotalMilliseconds:0} ms"
+                : $"{span.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture)} s";
+        }
+    }
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            _execution = await Client.GetExecutionAsync(Id);
+            _error = null;
+        }
+        catch (JobForgeApiException ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}
