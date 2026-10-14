@@ -1,0 +1,15 @@
+<span class="@CssClass" data-testid="status-badge" data-status="@Status">@(Status ?? "unknown")</span>
+
+@code {
+    [Parameter, EditorRequired] public string? Status { get; set; }
+
+    private string CssClass => Status switch
+    {
+        "succeeded" => "badge text-bg-success",
+        "failed" => "badge text-bg-danger",
+        "dead" => "badge text-bg-dark",
+        "running" => "badge text-bg-primary",
+        "pending" => "badge text-bg-secondary",
+        _ => "badge text-bg-secondary"
+    };
+}
