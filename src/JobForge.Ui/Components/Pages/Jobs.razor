@@ -1,0 +1,129 @@
+@page "/"
+@inject IJobForgeClient Client
+@inject NavigationManager Nav
+
+<PageTitle>jobforge — jobs</PageTitle>
+
+<h1>Jobs</h1>
+
+<div class="mb-3 d-flex gap-2">
+    <a class="btn btn-primary" href="jobs/new" data-testid="new-job-link">New job</a>
+    <a class="btn btn-outline-secondary" href="executions" data-testid="executions-link">Executions</a>
+</div>
+
+@if (_error is not null)
+{
+    <div class="alert alert-warning" role="alert" data-testid="error-alert">@_error</div>
+}
+
+@if (_loading)
+{
+    <p><em>Loading…</em></p>
+}
+else if (_jobs is { Count: 0 })
+{
+    <p data-testid="jobs-empty">No jobs yet — create the first one.</p>
+}
+else if (_jobs is not null)
+{
+    <table class="table table-sm align-middle">
+        <thead>
+            <tr><th>Name</th><th>Webhook URL</th><th>Cron</th><th>Enabled</th><th>Last run</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var job in _jobs)
+            {
+                <tr data-testid="job-row">
+                    <td>@job.Name</td>
+                    <td class="text-break">@job.WebhookUrl</td>
+                    <td class="font-monospace">@(job.Cron ?? "—")</td>
+                    <td>@(job.Enabled ? "yes" : "no")</td>
+                    <td>
+                        @if (job.ExecutionId is not null && job.ExecutionStatus is not null)
+                        {
+                            <a href="@($"/executions/{job.ExecutionId}")" data-testid="job-last-execution">
+                                <StatusBadge Status="@job.ExecutionStatus" />
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="text-body-secondary">never run</span>
+                        }
+                    </td>
+                    <td class="text-end">
+                        @if (job.Enabled)
+                        {
+                            <button class="btn btn-sm btn-outline-primary" data-testid="job-run-button"
+                                    disabled="@(_busyJobId == job.Id)" @onclick="() => RunAsync(job.Id)">Run now</button>
+                            <button class="btn btn-sm btn-outline-danger" data-testid="job-disable-button"
+                                    disabled="@(_busyJobId == job.Id)" @onclick="() => DisableAsync(job.Id)">Disable</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<JobDto>? _jobs;
+    private bool _loading;
+    private string? _error;
+    private Guid? _busyJobId;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            _jobs = (await Client.GetJobsAsync()).ToList();
+            _error = null;
+        }
+        catch (JobForgeApiException ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task RunAsync(Guid jobId)
+    {
+        _busyJobId = jobId;
+        try
+        {
+            var execution = await Client.RunJobAsync(jobId);
+            Nav.NavigateTo($"/executions/{execution.Id}");
+        }
+        catch (JobForgeApiException ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busyJobId = null;
+        }
+    }
+
+    private async Task DisableAsync(Guid jobId)
+    {
+        _busyJobId = jobId;
+        try
+        {
+            await Client.DisableJobAsync(jobId);
+            await LoadAsync();
+        }
+        catch (JobForgeApiException ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busyJobId = null;
+        }
+    }
+}
