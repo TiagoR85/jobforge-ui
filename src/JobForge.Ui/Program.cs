@@ -1,6 +1,14 @@
 using JobForge.Ui.Components;
+using JobForge.Ui.Configuration;
+using JobForge.Ui.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+RequiredConfig.Ensure(builder.Configuration, "JobForge:BaseUrl", "JobForge:ClientSecret");
+
+builder.Services.AddSingleton(
+    builder.Configuration.GetSection("JobForge").Get<JobForgeOptions>()
+        ?? throw new InvalidOperationException("Missing required configuration: JobForge. See .env.example."));
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
