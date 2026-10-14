@@ -63,4 +63,23 @@ public sealed class ConfigTests
         Assert.Equal(5, LoadAppSettings("appsettings.json")
             .GetProperty("Ui").GetProperty("RefreshSeconds").GetInt32());
     }
+
+    [Fact]
+    public void Nlog_defaults_service_name_to_jobforge_ui()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null)
+        {
+            var candidate = Path.Combine(dir.FullName, "src", "JobForge.Ui", "nlog.config");
+            if (File.Exists(candidate))
+            {
+                var xml = File.ReadAllText(candidate);
+                Assert.Contains("default=jobforge-ui", xml);
+                Assert.Contains("JsonLayout", xml);
+                return;
+            }
+            dir = dir.Parent;
+        }
+        throw new FileNotFoundException("src/JobForge.Ui/nlog.config not found walking up from " + AppContext.BaseDirectory);
+    }
 }
