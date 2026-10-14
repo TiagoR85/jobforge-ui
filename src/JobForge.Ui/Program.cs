@@ -18,6 +18,16 @@ builder.Services.AddHttpClient<JobForgeTokenProvider>((sp, client) =>
     client.BaseAddress = new Uri(options.TokenUri, UriKind.Absolute);
 });
 
+builder.Services.AddHttpClient("JobForgeApi", (sp, client) =>
+{
+    var options = sp.GetRequiredService<JobForgeOptions>();
+    client.BaseAddress = new Uri(options.BaseUrl, UriKind.Absolute);
+});
+
+builder.Services.AddSingleton<IJobForgeClient>(sp => new JobForgeClient(
+    sp.GetRequiredService<IHttpClientFactory>().CreateClient("JobForgeApi"),
+    sp.GetRequiredService<JobForgeTokenProvider>()));
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
