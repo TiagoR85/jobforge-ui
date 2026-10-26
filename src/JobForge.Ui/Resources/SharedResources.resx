@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="nav_overview" xml:space="preserve"><value>Overview</value></data>
+  <data name="nav_jobs" xml:space="preserve"><value>Jobs</value></data>
+  <data name="nav_new_job" xml:space="preserve"><value>New job</value></data>
+  <data name="nav_executions" xml:space="preserve"><value>Executions</value></data>
+  <data name="nav_dead_letters" xml:space="preserve"><value>Dead letters</value></data>
+  <data name="nav_operations" xml:space="preserve"><value>Operations</value></data>
+  <data name="brand_name" xml:space="preserve"><value>jobforge</value></data>
+  <data name="brand_tagline" xml:space="preserve"><value>webhook scheduler</value></data>
+  <data name="header_new_job" xml:space="preserve"><value>New job</value></data>
+  <data name="header_language" xml:space="preserve"><value>Language</value></data>
+  <data name="header_toggle_theme" xml:space="preserve"><value>Toggle theme</value></data>
+  <data name="header_accent" xml:space="preserve"><value>Accent colour</value></data>
+  <data name="header_open_palette" xml:space="preserve"><value>Search or jump to…</value></data>
+  <data name="common_loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="common_error" xml:space="preserve"><value>An unhandled error has occurred.</value></data>
+  <data name="common_cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="common_confirm" xml:space="preserve"><value>Confirm</value></data>
+  <data name="common_refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="common_never" xml:space="preserve"><value>never</value></data>
+  <data name="common_all" xml:space="preserve"><value>All</value></data>
+  <data name="common_close" xml:space="preserve"><value>Close</value></data>
+  <data name="status_pending" xml:space="preserve"><value>pending</value></data>
+  <data name="status_running" xml:space="preserve"><value>running</value></data>
+  <data name="status_succeeded" xml:space="preserve"><value>succeeded</value></data>
+  <data name="status_failed" xml:space="preserve"><value>failed</value></data>
+  <data name="status_dead" xml:space="preserve"><value>dead</value></data>
+  <data name="status_unknown" xml:space="preserve"><value>unknown</value></data>
+  <data name="overview_title" xml:space="preserve"><value>Overview</value></data>
+  <data name="overview_active_jobs" xml:space="preserve"><value>Active jobs</value></data>
+  <data name="overview_success_rate" xml:space="preserve"><value>Success rate</value></data>
+  <data name="overview_dead_letters" xml:space="preserve"><value>Dead letters</value></data>
+  <data name="overview_avg_duration" xml:space="preserve"><value>Average duration</value></data>
+  <data name="overview_window_note" xml:space="preserve"><value>Based on the latest {0} executions</value></data>
+  <data name="overview_total_jobs" xml:space="preserve"><value>{0} total</value></data>
+  <data name="overview_last_executions" xml:space="preserve"><value>Latest executions</value></data>
+  <data name="overview_no_data" xml:space="preserve"><value>No executions yet. Create a job to see data here.</value></data>
+  <data name="overview_chart_hourly" xml:space="preserve"><value>Executions per hour</value></data>
+  <data name="overview_chart_status" xml:space="preserve"><value>By status</value></data>
+  <data name="jobs_title" xml:space="preserve"><value>Jobs</value></data>
+  <data name="jobs_search_placeholder" xml:space="preserve"><value>Search by name…</value></data>
+  <data name="jobs_empty" xml:space="preserve"><value>No jobs yet — create the first one.</value></data>
+  <data name="jobs_no_match" xml:space="preserve"><value>No jobs match the search.</value></data>
+  <data name="jobs_run_now" xml:space="preserve"><value>Run now</value></data>
+  <data name="jobs_disable" xml:space="preserve"><value>Disable</value></data>
+  <data name="jobs_last_run" xml:space="preserve"><value>Last run</value></data>
+  <data name="jobs_enabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="jobs_disabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="jobs_disable_title" xml:space="preserve"><value>Disable job</value></data>
+  <data name="jobs_disable_body" xml:space="preserve"><value>Disable "{0}"? Scheduled runs stop until it is re-enabled.</value></data>
+  <data name="jobs_disabled_toast" xml:space="preserve"><value>Job disabled.</value></data>
+  <data name="jobs_name" xml:space="preserve"><value>Name</value></data>
+  <data name="jobs_url" xml:space="preserve"><value>Webhook URL</value></data>
+  <data name="jobs_cron" xml:space="preserve"><value>Cron</value></data>
+  <data name="new_title" xml:space="preserve"><value>New job</value></data>
+  <data name="new_name" xml:space="preserve"><value>Name</value></data>
+  <data name="new_url" xml:space="preserve"><value>Webhook URL</value></data>
+  <data name="new_payload" xml:space="preserve"><value>Payload JSON (optional)</value></data>
+  <data name="new_cron" xml:space="preserve"><value>Cron (optional)</value></data>
+  <data name="new_cron_hint" xml:space="preserve"><value>Cronos syntax, e.g. */5 * * * *. Leave empty for a one-shot job.</value></data>
+  <data name="new_cron_preview" xml:space="preserve"><value>Next runs (UTC)</value></data>
+  <data name="new_create" xml:space="preserve"><value>Create job</value></data>
+  <data name="new_cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="new_name_required" xml:space="preserve"><value>Name is required.</value></data>
+  <data name="new_url_invalid" xml:space="preserve"><value>A valid http(s) URL is required.</value></data>
+  <data name="new_payload_invalid" xml:space="preserve"><value>Payload must be valid JSON.</value></data>
+  <data name="new_cron_invalid" xml:space="preserve"><value>Invalid cron expression (Cronos syntax).</value></data>
+  <data name="new_created_toast" xml:space="preserve"><value>Job created.</value></data>
+  <data name="new_preset_5m" xml:space="preserve"><value>Every 5 min</value></data>
+  <data name="new_preset_hourly" xml:space="preserve"><value>Hourly</value></data>
+  <data name="new_preset_daily" xml:space="preserve"><value>Daily 09:00</value></data>
+  <data name="new_preset_weekly" xml:space="preserve"><value>Mondays 09:00</value></data>
+  <data name="exec_title" xml:space="preserve"><value>Executions</value></data>
+  <data name="exec_filter" xml:space="preserve"><value>Status</value></data>
+  <data name="exec_page_info" xml:space="preserve"><value>Page {0} of {1} ({2} total)</value></data>
+  <data name="exec_empty" xml:space="preserve"><value>No executions match the current filter.</value></data>
+  <data name="exec_scheduled" xml:space="preserve"><value>Scheduled</value></data>
+  <data name="exec_job" xml:space="preserve"><value>Job</value></data>
+  <data name="exec_status" xml:space="preserve"><value>Status</value></data>
+  <data name="exec_attempt" xml:space="preserve"><value>Attempt</value></data>
+  <data name="exec_http" xml:space="preserve"><value>HTTP</value></data>
+  <data name="exec_prev" xml:space="preserve"><value>Previous</value></data>
+  <data name="exec_next" xml:space="preserve"><value>Next</value></data>
+  <data name="exec_detail_title" xml:space="preserve"><value>Execution</value></data>
+  <data name="exec_timeline" xml:space="preserve"><value>Timeline</value></data>
+  <data name="exec_scheduled_at" xml:space="preserve"><value>scheduled</value></data>
+  <data name="exec_started_at" xml:space="preserve"><value>started</value></data>
+  <data name="exec_finished_at" xml:space="preserve"><value>finished</value></data>
+  <data name="exec_duration" xml:space="preserve"><value>duration</value></data>
+  <data name="exec_not_found" xml:space="preserve"><value>Execution not found — it does not exist (or was purged).</value></data>
+  <data name="exec_trace" xml:space="preserve"><value>trace</value></data>
+  <data name="exec_job_id" xml:space="preserve"><value>job</value></data>
+  <data name="ops_title" xml:space="preserve"><value>Operations</value></data>
+  <data name="ops_health" xml:space="preserve"><value>Orchestrator health</value></data>
+  <data name="ops_live" xml:space="preserve"><value>Liveness</value></data>
+  <data name="ops_ready" xml:space="preserve"><value>Readiness</value></data>
+  <data name="ops_base_url" xml:space="preserve"><value>API base URL</value></data>
+  <data name="ops_client_id" xml:space="preserve"><value>OIDC client</value></data>
+  <data name="ops_scopes" xml:space="preserve"><value>Scopes</value></data>
+  <data name="ops_refresh" xml:space="preserve"><value>Executions refresh</value></data>
+  <data name="ops_metrics" xml:space="preserve"><value>Open Prometheus metrics</value></data>
+  <data name="ops_healthy" xml:space="preserve"><value>Healthy</value></data>
+  <data name="ops_unhealthy" xml:space="preserve"><value>Unhealthy</value></data>
+  <data name="ops_degraded" xml:space="preserve"><value>Degraded</value></data>
+  <data name="ops_checking" xml:space="preserve"><value>Checking…</value></data>
+  <data name="ops_seconds" xml:space="preserve"><value>{0} s</value></data>
+  <data name="time_now" xml:space="preserve"><value>just now</value></data>
+  <data name="time_seconds_ago" xml:space="preserve"><value>{0}s ago</value></data>
+  <data name="time_minutes_ago" xml:space="preserve"><value>{0}m ago</value></data>
+  <data name="time_hours_ago" xml:space="preserve"><value>{0}h ago</value></data>
+  <data name="time_days_ago" xml:space="preserve"><value>{0}d ago</value></data>
+  <data name="command_placeholder" xml:space="preserve"><value>Search pages and actions…</value></data>
+  <data name="command_no_results" xml:space="preserve"><value>No results found.</value></data>
+  <data name="command_pages" xml:space="preserve"><value>Pages</value></data>
+  <data name="command_actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="command_new_job" xml:space="preserve"><value>Create a new job</value></data>
+  <data name="command_refresh" xml:space="preserve"><value>Refresh data</value></data>
+  <data name="command_toggle_theme" xml:space="preserve"><value>Toggle theme</value></data>
+  <data name="command_hint_navigate" xml:space="preserve"><value>navigate</value></data>
+  <data name="command_hint_select" xml:space="preserve"><value>select</value></data>
+  <data name="command_hint_close" xml:space="preserve"><value>close</value></data>
+  <data name="error_title" xml:space="preserve"><value>Error</value></data>
+  <data name="error_body" xml:space="preserve"><value>An error occurred while processing your request.</value></data>
+  <data name="error_request_id" xml:space="preserve"><value>Request ID</value></data>
+  <data name="not_found_title" xml:space="preserve"><value>Not found</value></data>
+  <data name="not_found_body" xml:space="preserve"><value>The page you are looking for does not exist.</value></data>
+  <data name="not_found_back" xml:space="preserve"><value>Back to overview</value></data>
+</root>

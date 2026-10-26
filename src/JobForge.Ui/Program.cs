@@ -1,7 +1,10 @@
+using System.Globalization;
 using JobForge.Ui.Components;
 using JobForge.Ui.Configuration;
 using JobForge.Ui.Health;
+using JobForge.Ui.Localization;
 using JobForge.Ui.Services;
+using Microsoft.AspNetCore.Localization;
 using NLog.Web;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +18,20 @@ builder.Services.AddSingleton(
     builder.Configuration.GetSection("JobForge").Get<JobForgeOptions>()
         ?? throw new InvalidOperationException("Missing required configuration: JobForge. See .env.example."));
 builder.Services.Configure<UiOptions>(builder.Configuration.GetSection("Ui"));
+
+builder.Services.AddLocalization();
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supported = new[] { new CultureInfo("pt-BR"), new CultureInfo("en") };
+    options.DefaultRequestCulture = new RequestCulture("pt-BR");
+    options.SupportedCultures = supported;
+    options.SupportedUICultures = supported;
+    options.RequestCultureProviders =
+    [
+        new CookieRequestCultureProvider { CookieName = CultureCookie.CookieName },
+        new AcceptLanguageHeaderRequestCultureProvider()
+    ];
+});
 
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddHttpClient<JobForgeTokenProvider>((sp, client) =>
@@ -46,9 +63,18 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+app.UseRequestLocalization();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+
+app.MapGet("/culture/set", (HttpContext http, string c, string? redirect) =>
+{
+    if (!CultureCookie.IsSupported(c)) return Results.BadRequest(new { error = "unsupported culture" });
+    CultureCookie.Set(http.Response, c, http.Request.IsHttps);
+    return Results.LocalRedirect(CultureCookie.SafeRedirect(redirect));
+});
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
