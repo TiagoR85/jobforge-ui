@@ -1,4 +1,3 @@
-using JobForge.Ui.Components;
 using JobForge.Ui.Components.Pages;
 using JobForge.Ui.Services;
 using Microsoft.AspNetCore.Components;
@@ -12,6 +11,7 @@ public sealed class NewJobPageTests : UiTestContext
     {
         fake ??= new FakeJobForgeClient();
         Services.AddSingleton<IJobForgeClient>(fake);
+        Services.AddSingleton(new ToastService());
         return fake;
     }
 
@@ -19,6 +19,43 @@ public sealed class NewJobPageTests : UiTestContext
     {
         cut.Find("[data-testid=job-name-input]").Change("demo");
         cut.Find("[data-testid=job-url-input]").Change("https://example.test/hook");
+    }
+
+    [Fact]
+    public void Cron_preview_returns_next_three_occurrences_utc()
+    {
+        var next = CronPreview.Next("0 9 * * *", new DateTime(2026, 10, 26, 0, 0, 0, DateTimeKind.Utc), 3);
+
+        Assert.Equal(3, next.Count);
+        Assert.Equal(new DateTime(2026, 10, 26, 9, 0, 0, DateTimeKind.Utc), next[0]);
+        Assert.Equal(new DateTime(2026, 10, 27, 9, 0, 0, DateTimeKind.Utc), next[1]);
+        Assert.Equal(new DateTime(2026, 10, 28, 9, 0, 0, DateTimeKind.Utc), next[2]);
+    }
+
+    [Fact]
+    public void Cron_preview_returns_empty_for_invalid_expression()
+        => Assert.Empty(CronPreview.Next("not a cron", DateTime.UtcNow, 3));
+
+    [Fact]
+    public void Renders_three_preview_rows_for_daily_cron()
+    {
+        Register();
+        var cut = Render<NewJob>();
+
+        cut.Find("[data-testid=job-cron-input]").Change("0 9 * * *");
+
+        cut.WaitForAssertion(() => Assert.Equal(3, cut.FindAll("[data-testid=cron-preview]").Count));
+    }
+
+    [Fact]
+    public void Preset_fills_the_cron_input()
+    {
+        Register();
+        var cut = Render<NewJob>();
+
+        cut.FindAll("[data-testid=preset-cron]")[0].Click();
+
+        Assert.Equal("*/5 * * * *", cut.Find("[data-testid=job-cron-input]").GetAttribute("value"));
     }
 
     [Fact]
@@ -71,8 +108,7 @@ public sealed class NewJobPageTests : UiTestContext
         Assert.Equal("https://example.test/hook", fake.LastCreateRequest.WebhookUrl);
         Assert.Equal("*/5 * * * *", fake.LastCreateRequest.Cron);
         Assert.Matches("^[0-9a-f]{32}$", fake.LastIdempotencyKey);
-        var nav = Services.GetRequiredService<NavigationManager>();
-        Assert.EndsWith("/", nav.Uri);
+        Assert.EndsWith("/jobs", Services.GetRequiredService<NavigationManager>().Uri);
     }
 
     [Fact]

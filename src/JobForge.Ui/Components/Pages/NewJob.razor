@@ -3,56 +3,97 @@
 @using Cronos
 @inject IJobForgeClient Client
 @inject NavigationManager Nav
+@inject ToastService Toasts
+@inject IStringLocalizer<SharedResources> L
 
-<PageTitle>jobforge — new job</PageTitle>
+<PageTitle>jobforge — @L["new_title"]</PageTitle>
 
-<h1>New job</h1>
+<h1 class="mb-6 text-2xl font-bold">@L["new_title"]</h1>
 
 @if (_formError is not null)
 {
-    <div class="alert alert-warning" role="alert" data-testid="form-error">@_formError</div>
+    <div class="mb-4 rounded-lg border border-[var(--destructive)] p-3 text-sm" data-testid="form-error">@_formError</div>
 }
 
-<div class="mb-3" style="max-width: 40rem">
-    <label class="form-label" for="job-name">Name</label>
-    <input id="job-name" class="form-control" data-testid="job-name-input" @bind="_name" />
-    @if (_nameError is not null)
-    {
-        <div class="text-danger" data-testid="name-error">@_nameError</div>
-    }
-</div>
+<Card Class="max-w-2xl">
+    <ChildContent>
+        <div class="space-y-4">
+            <div>
+                <label class="mb-1 block text-sm font-medium" for="job-name">@L["new_name"]</label>
+                <input id="job-name" data-testid="job-name-input"
+                       class="h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 text-sm"
+                       @bind="_name" />
+                @if (_nameError is not null)
+                {
+                    <p class="mt-1 text-xs text-[var(--destructive)]" data-testid="name-error">@_nameError</p>
+                }
+            </div>
 
-<div class="mb-3" style="max-width: 40rem">
-    <label class="form-label" for="job-url">Webhook URL</label>
-    <input id="job-url" class="form-control" data-testid="job-url-input" @bind="_url" />
-    @if (_urlError is not null)
-    {
-        <div class="text-danger" data-testid="url-error">@_urlError</div>
-    }
-</div>
+            <div>
+                <label class="mb-1 block text-sm font-medium" for="job-url">@L["new_url"]</label>
+                <input id="job-url" data-testid="job-url-input"
+                       class="h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 text-sm"
+                       @bind="_url" />
+                @if (_urlError is not null)
+                {
+                    <p class="mt-1 text-xs text-[var(--destructive)]" data-testid="url-error">@_urlError</p>
+                }
+            </div>
 
-<div class="mb-3" style="max-width: 40rem">
-    <label class="form-label" for="job-payload">Payload JSON (optional)</label>
-    <textarea id="job-payload" class="form-control" rows="4" data-testid="job-payload-input" @bind="_payload"></textarea>
-    @if (_payloadError is not null)
-    {
-        <div class="text-danger" data-testid="payload-error">@_payloadError</div>
-    }
-</div>
+            <div>
+                <label class="mb-1 block text-sm font-medium" for="job-payload">@L["new_payload"]</label>
+                <textarea id="job-payload" data-testid="job-payload-input" rows="4"
+                          class="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 font-mono text-sm"
+                          @bind="_payload"></textarea>
+                @if (_payloadError is not null)
+                {
+                    <p class="mt-1 text-xs text-[var(--destructive)]" data-testid="payload-error">@_payloadError</p>
+                }
+            </div>
 
-<div class="mb-3" style="max-width: 40rem">
-    <label class="form-label" for="job-cron">Cron (optional — Cronos syntax, e.g. */5 * * * *)</label>
-    <input id="job-cron" class="form-control" data-testid="job-cron-input" @bind="_cron" />
-    @if (_cronError is not null)
-    {
-        <div class="text-danger" data-testid="cron-error">@_cronError</div>
-    }
-</div>
-
-<button class="btn btn-primary" data-testid="submit-button" disabled="@_saving" @onclick="SubmitAsync">Create job</button>
-<a class="btn btn-outline-secondary ms-2" href="">Cancel</a>
+            <div>
+                <label class="mb-1 block text-sm font-medium" for="job-cron">@L["new_cron"]</label>
+                <input id="job-cron" data-testid="job-cron-input"
+                       class="h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 font-mono text-sm"
+                       @bind="_cron" @bind:after="UpdatePreview" />
+                <p class="mt-1 text-xs text-[var(--muted-foreground)]">@L["new_cron_hint"]</p>
+                <div class="mt-2 flex flex-wrap gap-2">
+                    <Button Variant="secondary" Size="sm" TestId="preset-cron" OnClick="() => ApplyPreset(Every5Min)">@L["new_preset_5m"]</Button>
+                    <Button Variant="secondary" Size="sm" TestId="preset-cron" OnClick="() => ApplyPreset(Hourly)">@L["new_preset_hourly"]</Button>
+                    <Button Variant="secondary" Size="sm" TestId="preset-cron" OnClick="() => ApplyPreset(Daily)">@L["new_preset_daily"]</Button>
+                    <Button Variant="secondary" Size="sm" TestId="preset-cron" OnClick="() => ApplyPreset(Weekly)">@L["new_preset_weekly"]</Button>
+                </div>
+                @if (_cronError is not null)
+                {
+                    <p class="mt-1 text-xs text-[var(--destructive)]" data-testid="cron-error">@_cronError</p>
+                }
+                @if (_preview.Count > 0)
+                {
+                    <div class="mt-3 rounded-lg bg-[var(--secondary)] p-3">
+                        <p class="text-xs font-semibold uppercase text-[var(--muted-foreground)]">@L["new_cron_preview"]</p>
+                        <ul class="mt-1 space-y-1 text-sm">
+                            @foreach (var occurrence in _preview)
+                            {
+                                <li data-testid="cron-preview" class="font-mono">@occurrence.ToString("u")</li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </div>
+        </div>
+    </ChildContent>
+    <Footer>
+        <a href="/jobs" class="inline-flex h-10 items-center rounded-lg px-4 text-sm">@L["new_cancel"]</a>
+        <Button TestId="submit-button" Disabled="_saving" OnClick="SubmitAsync">@L["new_create"]</Button>
+    </Footer>
+</Card>
 
 @code {
+    private const string Every5Min = "*/5 * * * *";
+    private const string Hourly = "0 * * * *";
+    private const string Daily = "0 9 * * *";
+    private const string Weekly = "0 9 * * 1";
+
     private string _name = "";
     private string _url = "";
     private string _payload = "";
@@ -63,6 +104,21 @@
     private string? _payloadError;
     private string? _cronError;
     private string? _formError;
+    private IReadOnlyList<DateTime> _preview = [];
+
+    private void ApplyPreset(string cron)
+    {
+        _cron = cron;
+        UpdatePreview();
+    }
+
+    private void UpdatePreview()
+    {
+        _preview = CronPreview.Next(_cron, DateTime.UtcNow, 3);
+        _cronError = string.IsNullOrWhiteSpace(_cron) || _preview.Count > 0
+            ? null
+            : L["new_cron_invalid"].Value;
+    }
 
     private async Task SubmitAsync()
     {
@@ -70,12 +126,12 @@
 
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _nameError = "Name is required.";
+            _nameError = L["new_name_required"].Value;
         }
         if (!Uri.TryCreate(_url, UriKind.Absolute, out var uri)
             || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
         {
-            _urlError = "A valid http(s) URL is required.";
+            _urlError = L["new_url_invalid"].Value;
         }
         if (!string.IsNullOrWhiteSpace(_payload))
         {
@@ -85,7 +141,7 @@
             }
             catch (JsonException)
             {
-                _payloadError = "Payload must be valid JSON.";
+                _payloadError = L["new_payload_invalid"].Value;
             }
         }
         if (!string.IsNullOrWhiteSpace(_cron))
@@ -96,11 +152,12 @@
             }
             catch (CronFormatException)
             {
-                _cronError = "Invalid cron expression (Cronos syntax: 5 or 6 fields).";
+                _cronError = L["new_cron_invalid"].Value;
             }
         }
 
-        if (_nameError is not null || _urlError is not null || _payloadError is not null || _cronError is not null)
+        if (_nameError is not null || _urlError is not null
+            || _payloadError is not null || _cronError is not null)
         {
             return;
         }
@@ -118,7 +175,8 @@
                     null,
                     null),
                 Guid.NewGuid().ToString("N"));
-            Nav.NavigateTo("/");
+            Toasts.ShowSuccess(L["new_created_toast"]);
+            Nav.NavigateTo("/jobs");
         }
         catch (JobForgeApiException ex)
         {
