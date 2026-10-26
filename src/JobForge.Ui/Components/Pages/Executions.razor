@@ -3,65 +3,87 @@
 @inject IJobForgeClient Client
 @inject NavigationManager Nav
 @inject IOptions<UiOptions> UiOpt
+@inject TimeProvider Clock
+@inject IStringLocalizer<SharedResources> L
 
-<PageTitle>jobforge — executions</PageTitle>
+<PageTitle>jobforge — @L["exec_title"]</PageTitle>
 
-<h1>Executions</h1>
-
-<div class="mb-3 d-flex gap-2 align-items-center">
-    <label class="form-label mb-0" for="status-filter">Status</label>
-    <select id="status-filter" class="form-select" style="max-width: 12rem"
-            data-testid="status-filter" value="@(Status ?? "")" @onchange="OnStatusChanged">
-        <option value="">All</option>
-        <option value="pending">pending</option>
-        <option value="running">running</option>
-        <option value="succeeded">succeeded</option>
-        <option value="failed">failed</option>
-        <option value="dead">dead</option>
-    </select>
-    <a class="btn btn-outline-secondary" href="jobs/new">New job</a>
+<div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+    <h1 class="text-2xl font-bold">@L["exec_title"]</h1>
+    <div class="flex items-end gap-2">
+        <div>
+            <label class="mb-1 block text-xs text-[var(--muted-foreground)]" for="status-filter">@L["exec_filter"]</label>
+            <select id="status-filter" data-testid="status-filter"
+                    class="h-10 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 text-sm"
+                    value="@(Status ?? "")" @onchange="OnStatusChanged">
+                <option value="">@L["common_all"]</option>
+                <option value="pending">@L["status_pending"]</option>
+                <option value="running">@L["status_running"]</option>
+                <option value="succeeded">@L["status_succeeded"]</option>
+                <option value="failed">@L["status_failed"]</option>
+                <option value="dead">@L["status_dead"]</option>
+            </select>
+        </div>
+        <Button Variant="secondary" TestId="executions-refresh" OnClick="LoadAsync">@L["common_refresh"]</Button>
+    </div>
 </div>
 
 @if (_error is not null)
 {
-    <div class="alert alert-warning" role="alert" data-testid="error-alert">@_error</div>
+    <div class="mb-4 rounded-lg border border-[var(--destructive)] p-3 text-sm" data-testid="error-alert">@_error</div>
 }
 
 @if (_loading && _pageResult is null)
 {
-    <p><em>Loading…</em></p>
+    <p class="text-sm text-[var(--muted-foreground)]">@L["common_loading"]</p>
 }
 else if (_pageResult is not null && _pageResult.Items.Count == 0)
 {
-    <p data-testid="executions-empty">No executions match the current filter.</p>
+    <Card><p class="text-sm text-[var(--muted-foreground)]" data-testid="executions-empty">@L["exec_empty"]</p></Card>
 }
 else if (_pageResult is not null)
 {
-    <p data-testid="page-info" class="text-body-secondary">
-        Page @_page of @TotalPages (@_pageResult.Total total)
+    <p class="mb-3 text-sm text-[var(--muted-foreground)]" data-testid="page-info">
+        @L["exec_page_info", _page, TotalPages, _pageResult.Total]
     </p>
-    <table class="table table-sm align-middle">
-        <thead>
-            <tr><th>Scheduled</th><th>Job</th><th>Status</th><th>Attempt</th><th>HTTP</th></tr>
-        </thead>
-        <tbody>
-            @foreach (var execution in _pageResult.Items)
-            {
-                <tr data-testid="execution-row">
-                    <td><a href="@($"/executions/{execution.Id}")">@execution.ScheduledAt.ToString("u")</a></td>
-                    <td class="font-monospace">@execution.JobId.ToString()[..8]</td>
-                    <td><StatusBadge Status="@execution.Status" /></td>
-                    <td>@execution.Attempt</td>
-                    <td>@(execution.HttpStatusCode?.ToString() ?? "—")</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-    <div class="btn-group">
-        <button class="btn btn-outline-secondary" data-testid="pagination-prev"
-                disabled="@(_page <= 1)" @onclick="PrevAsync">Prev</button>
-        <button class="btn btn-outline-secondary" data-testid="pagination-next"
-                disabled="@(!HasMore)" @onclick="NextAsync">Next</button>
+    <Card>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-xs uppercase text-[var(--muted-foreground)]">
+                        <th class="pb-2">@L["exec_scheduled"]</th>
+                        <th class="pb-2">@L["exec_job"]</th>
+                        <th class="pb-2">@L["exec_status"]</th>
+                        <th class="pb-2">@L["exec_attempt"]</th>
+                        <th class="pb-2">@L["exec_http"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var execution in _pageResult.Items)
+                    {
+                        var age = RelativeTime.Format(execution.ScheduledAt, Clock.GetUtcNow().UtcDateTime);
+                        <tr class="border-t border-[var(--border)]" data-testid="execution-row">
+                            <td class="py-2">
+                                <a class="hover:underline" data-testid="execution-link" href="@($"/executions/{execution.Id}")">
+                                    @execution.ScheduledAt.ToLocalTime().ToString("g")
+                                    <span class="ml-2 text-xs text-[var(--muted-foreground)]" data-testid="execution-age">
+                                        @(age.Value is null ? L[age.Key] : L[age.Key, age.Value.Value])
+                                    </span>
+                                </a>
+                            </td>
+                            <td class="py-2 font-mono text-xs">@execution.JobId.ToString()[..8]</td>
+                            <td class="py-2"><StatusBadge Status="@execution.Status" /></td>
+                            <td class="py-2">@execution.Attempt</td>
+                            <td class="py-2">@(execution.HttpStatusCode?.ToString() ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </Card>
+    <div class="mt-4 flex gap-2">
+        <Button Variant="secondary" Size="sm" TestId="pagination-prev" Disabled="@(_page <= 1)" OnClick="PrevAsync">@L["exec_prev"]</Button>
+        <Button Variant="secondary" Size="sm" TestId="pagination-next" Disabled="@(!HasMore)" OnClick="NextAsync">@L["exec_next"]</Button>
     </div>
 }
 

@@ -146,6 +146,30 @@ public sealed class ExecutionsPageTests : UiTestContext
     }
 
     [Fact]
+    public async Task Rows_expose_relative_time_and_link_to_detail()
+    {
+        var fake = new FakeJobForgeClient
+        {
+            Executions = new ExecutionPage(1, 20, 1,
+            [
+                new ExecutionDto(Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                    Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                    "succeeded", 1, 200, null,
+                    DateTime.UtcNow.AddMinutes(-2), null, null, "trace")
+            ])
+        };
+        Services.AddSingleton<IJobForgeClient>(fake);
+
+        var cut = Render<Executions>();
+        await Task.Yield();
+
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("[data-testid=execution-row]")));
+        Assert.NotEmpty(cut.FindAll("[data-testid=execution-age]"));
+        var link = cut.Find("[data-testid=execution-link]");
+        Assert.Contains("/executions/33333333", link.GetAttribute("href"));
+    }
+
+    [Fact]
     public async Task Api_failure_shows_error_alert()
     {
         Register(new FakeJobForgeClient

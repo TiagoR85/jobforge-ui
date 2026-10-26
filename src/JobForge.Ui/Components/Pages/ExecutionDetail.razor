@@ -1,72 +1,72 @@
 @page "/executions/{Id:guid}"
 @using System.Globalization
 @inject IJobForgeClient Client
+@inject IStringLocalizer<SharedResources> L
 
-<PageTitle>jobforge — execution</PageTitle>
+<PageTitle>jobforge — @L["exec_detail_title"]</PageTitle>
 
-<h1>Execution</h1>
+<h1 class="mb-6 text-2xl font-bold">@L["exec_detail_title"]</h1>
 
 @if (_loading && _execution is null)
 {
-    <p><em>Loading…</em></p>
+    <p class="text-sm text-[var(--muted-foreground)]">@L["common_loading"]</p>
 }
 else if (_error is not null && _execution is null)
 {
-    <div class="alert alert-warning" role="alert" data-testid="error-alert">@_error</div>
+    <div class="rounded-lg border border-[var(--destructive)] p-3 text-sm" data-testid="error-alert">@_error</div>
 }
 else if (_execution is null)
 {
-    <div class="alert alert-secondary" data-testid="execution-not-found">
-        Execution not found — it does not exist (or was purged).
-    </div>
+    <Card><p class="text-sm" data-testid="execution-not-found">@L["exec_not_found"]</p></Card>
 }
 else
 {
-    <div class="d-flex gap-3 align-items-center mb-3 flex-wrap">
-        <span data-testid="detail-status"><StatusBadge Status="@_execution.Status" /></span>
-        <span>attempt <strong data-testid="attempt">@_execution.Attempt</strong></span>
-        @if (_execution.HttpStatusCode is not null)
-        {
-            <span>HTTP <strong data-testid="http-status">@_execution.HttpStatusCode</strong></span>
-        }
-        @if (Duration is not null)
-        {
-            <span>duration <strong data-testid="duration">@Duration</strong></span>
-        }
-        <button class="btn btn-sm btn-outline-secondary" data-testid="refresh-button"
-                @onclick="LoadAsync">Refresh</button>
-    </div>
-
-    <div class="list-group mb-3" style="max-width: 40rem">
-        <div class="list-group-item d-flex justify-content-between" data-testid="timeline-item">
-            <span>scheduled</span>
-            <span>@_execution.ScheduledAt.ToString("u")</span>
+    <Card Class="max-w-3xl">
+        <div class="mb-4 flex flex-wrap items-center gap-3">
+            <span data-testid="detail-status"><StatusBadge Status="@_execution.Status" /></span>
+            <span class="text-sm text-[var(--muted-foreground)]">@L["exec_attempt"] <strong data-testid="attempt">@_execution.Attempt</strong></span>
+            @if (_execution.HttpStatusCode is not null)
+            {
+                <span class="text-sm text-[var(--muted-foreground)]">HTTP <strong data-testid="http-status">@_execution.HttpStatusCode</strong></span>
+            }
+            @if (Duration is not null)
+            {
+                <span class="text-sm text-[var(--muted-foreground)]">@L["exec_duration"] <strong data-testid="duration">@Duration</strong></span>
+            }
+            <Button Variant="secondary" Size="sm" TestId="refresh-button" OnClick="LoadAsync">@L["common_refresh"]</Button>
         </div>
-        @if (_execution.StartedAt is not null)
-        {
-            <div class="list-group-item d-flex justify-content-between" data-testid="timeline-item">
-                <span>started</span>
-                <span>@_execution.StartedAt.Value.ToString("u")</span>
-            </div>
-        }
-        @if (_execution.FinishedAt is not null)
-        {
-            <div class="list-group-item d-flex justify-content-between" data-testid="timeline-item">
-                <span>finished</span>
-                <span>@_execution.FinishedAt.Value.ToString("u")</span>
-            </div>
-        }
-    </div>
 
-    @if (_execution.Error is not null)
-    {
-        <div class="alert alert-danger" role="alert" data-testid="error-text">@_execution.Error</div>
-    }
+        <div class="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
+            <div class="flex justify-between px-4 py-2 text-sm" data-testid="timeline-item">
+                <span class="text-[var(--muted-foreground)]">@L["exec_scheduled_at"]</span>
+                <span>@_execution.ScheduledAt.ToLocalTime().ToString("g")</span>
+            </div>
+            @if (_execution.StartedAt is not null)
+            {
+                <div class="flex justify-between px-4 py-2 text-sm" data-testid="timeline-item">
+                    <span class="text-[var(--muted-foreground)]">@L["exec_started_at"]</span>
+                    <span>@_execution.StartedAt.Value.ToLocalTime().ToString("g")</span>
+                </div>
+            }
+            @if (_execution.FinishedAt is not null)
+            {
+                <div class="flex justify-between px-4 py-2 text-sm" data-testid="timeline-item">
+                    <span class="text-[var(--muted-foreground)]">@L["exec_finished_at"]</span>
+                    <span>@_execution.FinishedAt.Value.ToLocalTime().ToString("g")</span>
+                </div>
+            }
+        </div>
 
-    <p class="text-body-secondary mb-0">
-        job <span class="font-monospace">@_execution.JobId</span>
-        · trace <span class="font-monospace">@_execution.TraceId</span>
-    </p>
+        @if (_execution.Error is not null)
+        {
+            <div class="mt-4 rounded-lg border border-[var(--destructive)] p-3 text-sm" data-testid="error-text">@_execution.Error</div>
+        }
+
+        <p class="mt-4 text-xs text-[var(--muted-foreground)]">
+            @L["exec_job_id"] <span class="font-mono">@_execution.JobId</span>
+            · @L["exec_trace"] <span class="font-mono">@_execution.TraceId</span>
+        </p>
+    </Card>
 }
 
 @code {
