@@ -1,75 +1,125 @@
-@page "/"
+@page "/jobs"
 @inject IJobForgeClient Client
 @inject NavigationManager Nav
+@inject ToastService Toasts
+@inject IStringLocalizer<SharedResources> L
 
-<PageTitle>jobforge — jobs</PageTitle>
+<PageTitle>jobforge — @L["jobs_title"]</PageTitle>
 
-<h1>Jobs</h1>
-
-<div class="mb-3 d-flex gap-2">
-    <a class="btn btn-primary" href="jobs/new" data-testid="new-job-link">New job</a>
-    <a class="btn btn-outline-secondary" href="executions" data-testid="executions-link">Executions</a>
+<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-bold">@L["jobs_title"]</h1>
+    <div class="flex items-center gap-2">
+        <input data-testid="jobs-search" class="h-10 w-56 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 text-sm"
+               placeholder="@(L["jobs_search_placeholder"])" @bind="_search" @bind:event="oninput" />
+        <a href="/jobs/new" data-testid="new-job-link"
+           class="inline-flex h-10 items-center rounded-lg bg-[var(--primary)] px-4 text-sm font-medium text-[var(--primary-foreground)]">
+            @L["header_new_job"]
+        </a>
+    </div>
 </div>
 
 @if (_error is not null)
 {
-    <div class="alert alert-warning" role="alert" data-testid="error-alert">@_error</div>
+    <div class="mb-4 rounded-lg border border-[var(--destructive)] p-3 text-sm" data-testid="error-alert">@_error</div>
 }
 
-@if (_loading)
+@if (_loading && _jobs is null)
 {
-    <p><em>Loading…</em></p>
+    <p class="text-sm text-[var(--muted-foreground)]">@L["common_loading"]</p>
 }
 else if (_jobs is { Count: 0 })
 {
-    <p data-testid="jobs-empty">No jobs yet — create the first one.</p>
+    <Card><p class="text-sm text-[var(--muted-foreground)]" data-testid="jobs-empty">@L["jobs_empty"]</p></Card>
 }
-else if (_jobs is not null)
+else if (Filtered.Count == 0)
 {
-    <table class="table table-sm align-middle">
-        <thead>
-            <tr><th>Name</th><th>Webhook URL</th><th>Cron</th><th>Enabled</th><th>Last run</th><th></th></tr>
-        </thead>
-        <tbody>
-            @foreach (var job in _jobs)
-            {
-                <tr data-testid="job-row">
-                    <td>@job.Name</td>
-                    <td class="text-break">@job.WebhookUrl</td>
-                    <td class="font-monospace">@(job.Cron ?? "—")</td>
-                    <td>@(job.Enabled ? "yes" : "no")</td>
-                    <td>
-                        @if (job.ExecutionId is not null && job.ExecutionStatus is not null)
-                        {
-                            <a href="@($"/executions/{job.ExecutionId}")" data-testid="job-last-execution">
-                                <StatusBadge Status="@job.ExecutionStatus" />
-                            </a>
-                        }
-                        else
-                        {
-                            <span class="text-body-secondary">never run</span>
-                        }
-                    </td>
-                    <td class="text-end">
-                        @if (job.Enabled)
-                        {
-                            <button class="btn btn-sm btn-outline-primary" data-testid="job-run-button"
-                                    disabled="@(_busyJobId == job.Id)" @onclick="() => RunAsync(job.Id)">Run now</button>
-                            <button class="btn btn-sm btn-outline-danger" data-testid="job-disable-button"
-                                    disabled="@(_busyJobId == job.Id)" @onclick="() => DisableAsync(job.Id)">Disable</button>
-                        }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <Card><p class="text-sm text-[var(--muted-foreground)]" data-testid="jobs-no-match">@L["jobs_no_match"]</p></Card>
 }
+else
+{
+    <Card>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-xs uppercase text-[var(--muted-foreground)]">
+                        <th class="pb-2">@L["jobs_name"]</th>
+                        <th class="pb-2">@L["jobs_url"]</th>
+                        <th class="pb-2">@L["jobs_cron"]</th>
+                        <th class="pb-2">@L["jobs_enabled"]</th>
+                        <th class="pb-2">@L["jobs_last_run"]</th>
+                        <th class="pb-2"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var job in Filtered)
+                    {
+                        <tr class="border-t border-[var(--border)]" data-testid="job-row">
+                            <td class="py-2 font-medium">@job.Name</td>
+                            <td class="max-w-[22rem] truncate py-2 text-[var(--muted-foreground)]">@job.WebhookUrl</td>
+                            <td class="py-2 font-mono text-xs">@(job.Cron ?? "—")</td>
+                            <td class="py-2">
+                                <Badge Variant="@(job.Enabled ? "success" : "neutral")">
+                                    @(job.Enabled ? L["jobs_enabled"] : L["jobs_disabled"])
+                                </Badge>
+                            </td>
+                            <td class="py-2">
+                                @if (job.ExecutionId is not null && job.ExecutionStatus is not null)
+                                {
+                                    <a href="@($"/executions/{job.ExecutionId}")" data-testid="job-last-execution">
+                                        <StatusBadge Status="@job.ExecutionStatus" />
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-[var(--muted-foreground)]">@L["common_never"]</span>
+                                }
+                            </td>
+                            <td class="py-2 text-right">
+                                @if (job.Enabled)
+                                {
+                                    <Button Variant="secondary" Size="sm" TestId="job-run-button"
+                                            Disabled="@(_busyId == job.Id)" OnClick="() => RunAsync(job.Id)">
+                                        @L["jobs_run_now"]
+                                    </Button>
+                                    <Button Variant="danger" Size="sm" TestId="job-disable-button"
+                                            Disabled="@(_busyId == job.Id)" OnClick="() => AskDisable(job)">
+                                        @L["jobs_disable"]
+                                    </Button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </Card>
+}
+
+<Modal IsOpen="@(_disableTarget is not null)" Title="@(L["jobs_disable_title"])"
+       OnClose="() => { _disableTarget = null; }">
+    <ChildContent>
+        <p class="text-sm text-[var(--muted-foreground)]">
+            @L["jobs_disable_body", _disableTarget?.Name ?? ""]
+        </p>
+    </ChildContent>
+    <Footer>
+        <Button Variant="secondary" OnClick="() => { _disableTarget = null; }">@L["common_cancel"]</Button>
+        <Button Variant="danger" TestId="confirm-disable" OnClick="ConfirmDisableAsync">@L["jobs_disable"]</Button>
+    </Footer>
+</Modal>
 
 @code {
     private List<JobDto>? _jobs;
     private bool _loading;
     private string? _error;
-    private Guid? _busyJobId;
+    private string _search = "";
+    private Guid? _busyId;
+    private JobDto? _disableTarget;
+
+    private IReadOnlyList<JobDto> Filtered => _jobs is null
+        ? []
+        : _jobs.Where(j => string.IsNullOrWhiteSpace(_search)
+                           || j.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)).ToList();
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -91,9 +141,33 @@ else if (_jobs is not null)
         }
     }
 
+    private void AskDisable(JobDto job) => _disableTarget = job;
+
+    private async Task ConfirmDisableAsync()
+    {
+        if (_disableTarget is null) return;
+        var id = _disableTarget.Id;
+        _disableTarget = null;
+        _busyId = id;
+        try
+        {
+            await Client.DisableJobAsync(id);
+            Toasts.ShowSuccess(L["jobs_disabled_toast"]);
+            await LoadAsync();
+        }
+        catch (JobForgeApiException ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busyId = null;
+        }
+    }
+
     private async Task RunAsync(Guid jobId)
     {
-        _busyJobId = jobId;
+        _busyId = jobId;
         try
         {
             var execution = await Client.RunJobAsync(jobId);
@@ -105,25 +179,7 @@ else if (_jobs is not null)
         }
         finally
         {
-            _busyJobId = null;
-        }
-    }
-
-    private async Task DisableAsync(Guid jobId)
-    {
-        _busyJobId = jobId;
-        try
-        {
-            await Client.DisableJobAsync(jobId);
-            await LoadAsync();
-        }
-        catch (JobForgeApiException ex)
-        {
-            _error = ex.Message;
-        }
-        finally
-        {
-            _busyJobId = null;
+            _busyId = null;
         }
     }
 }

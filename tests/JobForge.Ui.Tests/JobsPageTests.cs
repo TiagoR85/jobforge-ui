@@ -1,4 +1,3 @@
-using JobForge.Ui.Components;
 using JobForge.Ui.Components.Pages;
 using JobForge.Ui.Services;
 using Microsoft.AspNetCore.Components;
@@ -14,11 +13,15 @@ public sealed class JobsPageTests : UiTestContext
     {
         fake ??= new FakeJobForgeClient
         {
-            Jobs = [new JobDto(JobId, "send-report", "https://example.test/hook", null,
-                "GET", "*/5 * * * *", 3, 30, true,
-                Guid.Parse("22222222-2222-2222-2222-222222222222"), "succeeded")]
+            Jobs =
+            [
+                new JobDto(JobId, "send-report", "https://example.test/hook", null,
+                    "GET", "*/5 * * * *", 3, 30, true,
+                    Guid.Parse("22222222-2222-2222-2222-222222222222"), "succeeded")
+            ]
         };
         Services.AddSingleton<IJobForgeClient>(fake);
+        Services.AddSingleton(new ToastService());
         return fake;
     }
 
@@ -32,12 +35,10 @@ public sealed class JobsPageTests : UiTestContext
 
         Assert.Contains("send-report", cut.Markup);
         Assert.Contains("*/5 * * * *", cut.Markup);
-        var row = cut.Find("[data-testid=job-row]");
-        var badge = row.QuerySelector("[data-testid=status-badge]")!;
+        var badge = cut.Find("[data-testid=job-row]").QuerySelector("[data-testid=status-badge]")!;
         Assert.Equal("succeeded", badge.GetAttribute("data-status"));
         Assert.NotEmpty(cut.FindAll("[data-testid=job-run-button]"));
         Assert.NotEmpty(cut.FindAll("[data-testid=job-disable-button]"));
-        Assert.NotEmpty(cut.FindAll("[data-testid=new-job-link]"));
     }
 
     [Fact]
@@ -50,12 +51,30 @@ public sealed class JobsPageTests : UiTestContext
     }
 
     [Fact]
-    public async Task Api_failure_shows_error_alert()
+    public async Task Search_filters_by_name()
     {
         Register(new FakeJobForgeClient
         {
-            JobsError = new JobForgeApiException(500, "orchestrator exploded")
+            Jobs =
+            [
+                new JobDto(JobId, "send-report", "https://a.test", null, "GET", null, 5, 30, true, null, null),
+                new JobDto(Guid.NewGuid(), "cleanup", "https://b.test", null, "GET", null, 5, 30, true, null, null)
+            ]
         });
+        var cut = Render<Jobs>();
+        await Task.Yield();
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll("[data-testid=job-row]").Count));
+
+        cut.Find("[data-testid=jobs-search]").Input("clean");
+
+        Assert.Single(cut.FindAll("[data-testid=job-row]"));
+        Assert.Contains("cleanup", cut.Markup);
+    }
+
+    [Fact]
+    public async Task Api_failure_shows_error_alert()
+    {
+        Register(new FakeJobForgeClient { JobsError = new JobForgeApiException(500, "orchestrator exploded") });
         var cut = Render<Jobs>();
         await Task.Yield();
         cut.WaitForAssertion(() => Assert.Contains("orchestrator exploded", cut.Markup));
@@ -75,12 +94,12 @@ public sealed class JobsPageTests : UiTestContext
         await Task.Yield();
 
         Assert.Equal(JobId, fake.LastRunJobId);
-        var nav = Services.GetRequiredService<NavigationManager>();
-        Assert.EndsWith($"/executions/{fake.RunResult.Id}", nav.Uri);
+        Assert.EndsWith($"/executions/{fake.RunResult.Id}",
+            Services.GetRequiredService<NavigationManager>().Uri);
     }
 
     [Fact]
-    public async Task Disable_calls_api_and_reloads_the_list()
+    public async Task Disable_requires_confirmation_then_reloads()
     {
         var fake = Register();
         var cut = Render<Jobs>();
@@ -88,6 +107,9 @@ public sealed class JobsPageTests : UiTestContext
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("[data-testid=job-disable-button]")));
 
         cut.Find("[data-testid=job-disable-button]").Click();
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("[data-testid=confirm-disable]")));
+
+        cut.Find("[data-testid=confirm-disable]").Click();
         await Task.Yield();
 
         Assert.Equal(JobId, fake.LastDisableJobId);
