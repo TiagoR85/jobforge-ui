@@ -1,0 +1,64 @@
+@inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResources> L
+
+<header class="sticky top-0 z-10 flex h-16 items-center gap-3 border-b border-[var(--border)] bg-[var(--background)] px-4 md:px-6">
+    <button type="button" class="rounded-lg p-2 hover:bg-[var(--secondary)] md:hidden"
+            data-testid="mobile-menu" @onclick="() => OnToggleSidebar.InvokeAsync()">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+    </button>
+
+    <button type="button"
+            class="hidden h-10 flex-1 items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--secondary)] px-3 text-left text-sm text-[var(--muted-foreground)] md:flex md:max-w-md"
+            data-testid="command-palette-button"
+            @onclick="() => OnOpenPalette.InvokeAsync()">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <span class="flex-1">@L["header_open_palette"]</span>
+        <kbd class="rounded border border-[var(--border)] bg-[var(--background)] px-1.5 py-0.5 text-[10px]">Ctrl+K</kbd>
+    </button>
+
+    <div class="ml-auto flex items-center gap-2">
+        <a href="/jobs/new" data-testid="new-job-link"
+           class="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--primary)] px-4 text-sm font-medium text-[var(--primary-foreground)] hover:opacity-90">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            <span class="hidden sm:inline">@L["header_new_job"]</span>
+        </a>
+
+        <label class="sr-only" for="culture-select">@L["header_language"]</label>
+        <select id="culture-select" data-testid="culture-select"
+                class="h-10 rounded-lg border border-[var(--border)] bg-[var(--card)] px-2 text-sm"
+                value="@System.Globalization.CultureInfo.CurrentUICulture.Name"
+                @onchange="ChangeCultureAsync">
+            <option value="pt-BR">PT</option>
+            <option value="en">EN</option>
+        </select>
+
+        <ThemeToggle />
+        <AccentPicker />
+    </div>
+</header>
+
+@code {
+    [Parameter] public EventCallback OnToggleSidebar { get; set; }
+    [Parameter] public EventCallback OnOpenPalette { get; set; }
+
+    private async Task ChangeCultureAsync(ChangeEventArgs e)
+    {
+        var culture = e.Value?.ToString();
+        if (!CultureCookie.IsSupported(culture))
+        {
+            return;
+        }
+
+        var current = new Uri(Navigation.Uri).PathAndQuery;
+        Navigation.NavigateTo(
+            $"/culture/set?c={Uri.EscapeDataString(culture!)}&redirect={Uri.EscapeDataString(current)}",
+            forceLoad: true);
+        await Task.CompletedTask;
+    }
+}

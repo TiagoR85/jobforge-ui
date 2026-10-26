@@ -1,0 +1,96 @@
+@inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResources> L
+
+<aside class="@SidebarClass">
+    <div class="flex items-center justify-between p-4">
+        <div class="flex min-w-0 items-center gap-2">
+            <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[var(--primary)]">
+                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+            </div>
+            @if (!IsCollapsed)
+            {
+                <div class="min-w-0">
+                    <span class="block truncate text-sm font-bold text-[var(--sidebar-foreground)]">@L["brand_name"]</span>
+                    <span class="block truncate text-[10px] uppercase tracking-wider text-[var(--muted-foreground)]">@L["brand_tagline"]</span>
+                </div>
+            }
+        </div>
+        @if (!IsMobile)
+        {
+            <button type="button" class="rounded p-1 text-[var(--muted-foreground)] hover:bg-[var(--sidebar-accent)]"
+                    data-testid="sidebar-toggle" @onclick="() => OnToggle.InvokeAsync()">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="@(IsCollapsed ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7")" />
+                </svg>
+            </button>
+        }
+    </div>
+
+    <nav class="flex-1 space-y-1 overflow-y-auto overflow-x-hidden px-2 py-2">
+        @foreach (var item in Items)
+        {
+            <a href="@item.Href"
+               data-testid="nav-@item.Key"
+               class="@NavClass(item.Href)"
+               @onclick="() => OnClose.InvokeAsync()">
+                <svg class="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="@item.Icon" />
+                </svg>
+                @if (!IsCollapsed)
+                {
+                    <span>@L[item.LabelKey]</span>
+                }
+            </a>
+        }
+    </nav>
+
+    <div class="border-t border-[var(--sidebar-border)] p-3 text-[10px] text-[var(--muted-foreground)]">
+        @if (!IsCollapsed)
+        {
+            <span>jobforge v1.1.0</span>
+        }
+    </div>
+</aside>
+
+@if (IsMobile && !IsCollapsed)
+{
+    <div class="fixed inset-0 z-40 bg-black/50" @onclick="() => OnClose.InvokeAsync()"></div>
+}
+
+@code {
+    [Parameter] public bool IsCollapsed { get; set; }
+    [Parameter] public bool IsMobile { get; set; }
+    [Parameter] public EventCallback OnToggle { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private static readonly (string Key, string Href, string LabelKey, string Icon)[] Items =
+    [
+        ("overview", "/", "nav_overview", "M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"),
+        ("jobs", "/jobs", "nav_jobs", "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"),
+        ("new_job", "/jobs/new", "nav_new_job", "M12 4v16m8-8H4"),
+        ("executions", "/executions", "nav_executions", "M4 6h16M4 12h16M4 18h10"),
+        ("dead_letters", "/executions?status=dead", "nav_dead_letters", "M12 9v2m0 4h.01M5.07 19h13.86a2 2 0 001.73-3l-6.93-12a2 2 0 00-3.46 0l-6.93 12a2 2 0 001.73 3z"),
+        ("operations", "/operations", "nav_operations", "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z")
+    ];
+
+    private string CurrentPath => new Uri(Navigation.Uri).AbsolutePath;
+
+    private string SidebarClass => IsMobile
+        ? $"fixed left-0 top-0 z-50 flex h-screen w-[260px] flex-col border-r border-[var(--sidebar-border)] bg-[var(--sidebar)] text-[var(--sidebar-foreground)] transition-transform duration-300 {(IsCollapsed ? "-translate-x-full" : "translate-x-0")}"
+        : $"fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-[var(--sidebar-border)] bg-[var(--sidebar)] text-[var(--sidebar-foreground)] transition-all duration-300 {(IsCollapsed ? "w-[72px]" : "w-[260px]")}";
+
+    private string NavClass(string href)
+    {
+        var active = NavRoute.IsActive(CurrentPath, href);
+        var baseClass = "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-[var(--sidebar-foreground)] transition-all duration-300";
+        var state = active
+            ? "border-l-3 border-[var(--primary)] bg-[var(--sidebar-accent)] pl-2.5 text-[var(--primary)]"
+            : "border-l-3 border-transparent hover:translate-x-0.5 hover:bg-[var(--sidebar-accent)]";
+        var collapsed = IsCollapsed ? "justify-center border-l-0 px-0" : "";
+        return $"{baseClass} {state} {collapsed}";
+    }
+}

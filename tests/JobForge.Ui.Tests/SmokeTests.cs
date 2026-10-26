@@ -5,12 +5,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace JobForge.Ui.Tests;
 
-public sealed class SmokeTests : BunitContext
+public sealed class SmokeTests : UiTestContext
 {
     [Fact]
     public void App_renders()
     {
         Services.AddSingleton<IJobForgeClient>(new FakeJobForgeClient());
+        Services.AddSingleton(new ToastService());
         var cut = Render<Routes>();
         Assert.Contains("jobforge", cut.Markup, StringComparison.OrdinalIgnoreCase);
     }
@@ -30,15 +31,18 @@ public sealed class SmokeTests : BunitContext
     }
 
     [Fact]
-    public void Nav_menu_links_to_the_family_pages()
+    public void Nav_links_to_the_family_pages()
     {
         Services.AddSingleton<IJobForgeClient>(new FakeJobForgeClient());
+        Services.AddSingleton(new ToastService());
         var cut = Render<Routes>();
         var hrefs = cut.FindAll("a").Select(a => a.GetAttribute("href")).ToList();
 
-        Assert.Contains("", hrefs);
-        Assert.Contains("jobs/new", hrefs);
-        Assert.Contains("executions", hrefs);
-        Assert.Contains("executions?status=dead", hrefs);
+        Assert.Contains("/", hrefs);
+        Assert.Contains("/jobs", hrefs);
+        Assert.Contains("/jobs/new", hrefs);
+        Assert.Contains("/executions", hrefs);
+        Assert.Contains("/executions?status=dead", hrefs);
+        Assert.Contains("/operations", hrefs);
     }
 }

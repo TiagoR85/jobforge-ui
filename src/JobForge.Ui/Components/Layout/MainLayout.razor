@@ -1,23 +1,97 @@
 ﻿@inherits LayoutComponentBase
+@implements IDisposable
+@inject IJSRuntime JS
+@inject IStringLocalizer<SharedResources> L
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <span class="text-body-secondary">jobforge-ui console</span>
-        </div>
-
-        <article class="content px-4">
+<div class="min-h-screen bg-[var(--background)]">
+    <Sidebar IsCollapsed="@(_mobile ? !_showMobileSidebar : _collapsed)" IsMobile="@_mobile" OnToggle="ToggleSidebar" OnClose="CloseSidebar" />
+    <div class="@ContentClass">
+        <Header OnToggleSidebar="ToggleMobileSidebar" OnOpenPalette="OpenPaletteAsync" />
+        <main class="p-4 md:p-6">
             @Body
-        </article>
-    </main>
+        </main>
+    </div>
+    @if (_mobile)
+    {
+        <BottomNav />
+    }
+    <CommandPalette @ref="_palette" />
+    <ToastContainer />
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
+    @L["common_error"]
+    <a href="." class="reload">@L["common_refresh"]</a>
+    <span class="dismiss">×</span>
 </div>
+
+@code {
+    private bool _collapsed;
+    private bool _mobile;
+    private bool _showMobileSidebar;
+    private bool _jsReady;
+    private DotNetObjectReference<MainLayout>? _dotNetRef;
+    private CommandPalette? _palette;
+
+    private string ContentClass => _mobile
+        ? "transition-all duration-300"
+        : _collapsed ? "ml-[72px] transition-all duration-300" : "ml-[260px] transition-all duration-300";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_jsReady)
+        {
+            return;
+        }
+
+        _jsReady = true;
+        try
+        {
+            _collapsed = await JS.InvokeAsync<bool>("getSidebarCollapsed");
+            _mobile = await JS.InvokeAsync<bool>("getIsMobile");
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("addResizeListener", _dotNetRef);
+            StateHasChanged();
+        }
+        catch (JSDisconnectedException)
+        {
+            return;
+        }
+        catch (InvalidOperationException)
+        {
+            return;
+        }
+    }
+
+    private async Task ToggleSidebar()
+    {
+        _collapsed = !_collapsed;
+        try { await JS.InvokeVoidAsync("setSidebarCollapsed", _collapsed); } catch { }
+    }
+
+    private void ToggleMobileSidebar() => _showMobileSidebar = !_showMobileSidebar;
+
+    private void CloseSidebar() => _showMobileSidebar = false;
+
+    private async Task OpenPaletteAsync()
+    {
+        if (_palette is not null)
+        {
+            await _palette.OpenAsync();
+        }
+    }
+
+    [JSInvokable]
+    public void OnResize(bool isMobile)
+    {
+        _mobile = isMobile;
+        _showMobileSidebar = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        try { _dotNetRef?.Dispose(); } catch { }
+        _dotNetRef = null;
+    }
+}
