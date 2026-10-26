@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+/* dark mode por classe no <html class="dark"> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* o extractor precisa de ver classes em razor, C# (mapas de variantes) e js */
+@source "../**/*.razor";
+@source "../**/*.cs";
+@source "../wwwroot/js/*.js";
