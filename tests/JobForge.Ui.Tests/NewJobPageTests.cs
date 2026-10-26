@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace JobForge.Ui.Tests;
 
-public sealed class NewJobPageTests : BunitContext
+public sealed class NewJobPageTests : UiTestContext
 {
     private FakeJobForgeClient Register(FakeJobForgeClient? fake = null)
     {

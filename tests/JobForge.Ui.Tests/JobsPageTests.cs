@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace JobForge.Ui.Tests;
 
-public sealed class JobsPageTests : BunitContext
+public sealed class JobsPageTests : UiTestContext
 {
     private static readonly Guid JobId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 

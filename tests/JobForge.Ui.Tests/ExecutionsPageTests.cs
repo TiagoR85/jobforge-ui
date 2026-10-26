@@ -7,13 +7,14 @@ using Microsoft.Extensions.Options;
 
 namespace JobForge.Ui.Tests;
 
-public sealed class ExecutionsPageTests : BunitContext
+public sealed class ExecutionsPageTests : UiTestContext
 {
     private FakeJobForgeClient Register(FakeJobForgeClient? fake = null, double refreshSeconds = 5)
     {
         fake ??= new FakeJobForgeClient();
         Services.AddSingleton<IJobForgeClient>(fake);
         Services.AddSingleton(Options.Create(new UiOptions { RefreshSeconds = refreshSeconds }));
+        Services.AddSingleton(TimeProvider.System);
         return fake;
     }
 

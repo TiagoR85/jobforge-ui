@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace JobForge.Ui.Tests;
 
-public sealed class ExecutionDetailPageTests : BunitContext
+public sealed class ExecutionDetailPageTests : UiTestContext
 {
     private static readonly Guid ExecId = Guid.Parse("66666666-6666-6666-6666-666666666666");
 
