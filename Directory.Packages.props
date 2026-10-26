@@ -3,6 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Blazor-ApexCharts" Version="7.0.0" />
     <PackageVersion Include="Cronos" Version="0.13.0" />
     <PackageVersion Include="NLog" Version="6.2.1" />
     <PackageVersion Include="NLog.Web.AspNetCore" Version="6.2.0" />

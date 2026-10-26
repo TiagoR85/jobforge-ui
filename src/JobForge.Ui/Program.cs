@@ -1,4 +1,5 @@
 using System.Globalization;
+using ApexCharts;
 using JobForge.Ui.Components;
 using JobForge.Ui.Configuration;
 using JobForge.Ui.Health;
@@ -20,6 +21,7 @@ builder.Services.AddSingleton(
 builder.Services.Configure<UiOptions>(builder.Configuration.GetSection("Ui"));
 
 builder.Services.AddLocalization();
+builder.Services.AddApexCharts();
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
     var supported = new[] { new CultureInfo("pt-BR"), new CultureInfo("en") };

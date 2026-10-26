@@ -1,0 +1,26 @@
+@using System.Diagnostics.CodeAnalysis
+@using ApexCharts
+@attribute [ExcludeFromCodeCoverage]
+
+<ApexChart TItem="HourBucket" Options="_options" Height="260">
+    <ApexPointSeries TItem="HourBucket"
+                     Items="Buckets"
+                     Name="@(L["overview_chart_hourly"])"
+                     SeriesType="SeriesType.Area"
+                     XValue="b => b.Label"
+                     YValue="b => b.Count" />
+</ApexChart>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<HourBucket> Buckets { get; set; } = [];
+    [Inject] private IStringLocalizer<SharedResources> L { get; set; } = default!;
+
+    private readonly ApexChartOptions<HourBucket> _options = new()
+    {
+        Chart = new Chart { Toolbar = new Toolbar { Show = false } },
+        Colors = ["var(--chart-1)"],
+        Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
+        Legend = new Legend { Show = false },
+        DataLabels = new DataLabels { Enabled = false }
+    };
+}

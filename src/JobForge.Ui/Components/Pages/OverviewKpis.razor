@@ -1,0 +1,34 @@
+@inject IStringLocalizer<SharedResources> L
+
+<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <Card>
+        <p class="text-sm text-[var(--muted-foreground)]">@L["overview_active_jobs"]</p>
+        <p class="mt-1 text-2xl font-bold" data-testid="kpi-active-jobs">@Metrics.ActiveJobs</p>
+        <p class="mt-1 text-xs text-[var(--muted-foreground)]">@L["overview_total_jobs", Metrics.TotalJobs]</p>
+    </Card>
+    <Card>
+        <p class="text-sm text-[var(--muted-foreground)]">@L["overview_success_rate"]</p>
+        <p class="mt-1 text-2xl font-bold" data-testid="kpi-success-rate">@Metrics.SuccessRate.ToString("P0")</p>
+    </Card>
+    <Card>
+        <p class="text-sm text-[var(--muted-foreground)]">@L["overview_dead_letters"]</p>
+        <p class="mt-1 text-2xl font-bold" data-testid="kpi-dead-letters">@Metrics.DeadLetters</p>
+    </Card>
+    <Card>
+        <p class="text-sm text-[var(--muted-foreground)]">@L["overview_avg_duration"]</p>
+        <p class="mt-1 text-2xl font-bold" data-testid="kpi-avg-duration">
+            @(Metrics.AverageDuration is null ? "—" : Metrics.AverageDuration.Value.TotalSeconds.ToString("0.0") + " s")
+        </p>
+    </Card>
+</div>
+
+@if (!Metrics.HasData)
+{
+    <Card Class="mt-4">
+        <p class="text-sm text-[var(--muted-foreground)]" data-testid="overview-empty">@L["overview_no_data"]</p>
+    </Card>
+}
+
+@code {
+    [Parameter, EditorRequired] public OverviewMetrics Metrics { get; set; } = default!;
+}

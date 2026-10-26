@@ -1,0 +1,153 @@
+@page "/"
+@implements IAsyncDisposable
+@inject IJobForgeClient Client
+@inject TimeProvider Clock
+@inject IStringLocalizer<SharedResources> L
+
+<PageTitle>jobforge — @L["overview_title"]</PageTitle>
+
+<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <div>
+        <h1 class="text-2xl font-bold">@L["overview_title"]</h1>
+        <p class="text-sm text-[var(--muted-foreground)]">@L["overview_window_note", OverviewData.WindowSize]</p>
+    </div>
+    <Button Variant="secondary" Size="sm" TestId="overview-refresh" OnClick="LoadAsync">@L["common_refresh"]</Button>
+</div>
+
+@if (_error is not null)
+{
+    <div class="mb-4 rounded-lg border border-[var(--destructive)] p-3 text-sm" data-testid="error-alert">@_error</div>
+}
+
+@if (_metrics is null)
+{
+    <p class="text-sm text-[var(--muted-foreground)]">@L["common_loading"]</p>
+}
+else
+{
+    <OverviewKpis Metrics="_metrics" />
+
+    @if (_metrics.HasData)
+    {
+        <div class="mt-6 grid gap-4 lg:grid-cols-2">
+            <Card>
+                <Header><h2 class="font-semibold">@L["overview_chart_hourly"]</h2></Header>
+                <ChildContent>
+                    <ExecutionsAreaChart Buckets="_metrics.Hourly" />
+                </ChildContent>
+            </Card>
+            <Card>
+                <Header><h2 class="font-semibold">@L["overview_chart_status"]</h2></Header>
+                <ChildContent>
+                    <StatusDonutChart Counts="_metrics.ByStatus" />
+                </ChildContent>
+            </Card>
+        </div>
+    }
+
+    <Card Class="mt-6">
+        <Header><h2 class="font-semibold">@L["overview_last_executions"]</h2></Header>
+        <ChildContent>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-xs uppercase text-[var(--muted-foreground)]">
+                        <th class="pb-2">@L["exec_scheduled"]</th>
+                        <th class="pb-2">@L["exec_job"]</th>
+                        <th class="pb-2">@L["exec_status"]</th>
+                        <th class="pb-2">@L["exec_attempt"]</th>
+                        <th class="pb-2">@L["exec_http"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var execution in _recent)
+                    {
+                        <tr class="border-t border-[var(--border)]" data-testid="overview-execution-row">
+                            <td class="py-2">
+                                <a class="hover:underline" href="@($"/executions/{execution.Id}")">
+                                    @execution.ScheduledAt.ToLocalTime().ToString("g")
+                                </a>
+                            </td>
+                            <td class="py-2 font-mono text-xs">@execution.JobId.ToString()[..8]</td>
+                            <td class="py-2"><StatusBadge Status="@execution.Status" /></td>
+                            <td class="py-2">@execution.Attempt</td>
+                            <td class="py-2">@(execution.HttpStatusCode?.ToString() ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        </ChildContent>
+    </Card>
+}
+
+@code {
+    private const int RefreshSeconds = 30;
+    private OverviewMetrics? _metrics;
+    private IReadOnlyList<ExecutionDto> _recent = [];
+    private string? _error;
+    private bool _loading;
+    private CancellationTokenSource? _cts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _cts = new CancellationTokenSource();
+        await LoadAsync();
+        _ = RefreshLoopAsync(_cts.Token);
+    }
+
+    private async Task LoadAsync()
+    {
+        if (_loading) return;
+        _loading = true;
+        try
+        {
+            var token = _cts?.Token ?? CancellationToken.None;
+            _metrics = await OverviewData.LoadAsync(Client, Clock, token);
+            var page = await Client.GetExecutionsAsync(null, 1, 10, token);
+            _recent = page.Items;
+            _error = null;
+        }
+        catch (JobForgeApiException ex)
+        {
+            _error = ex.Message;
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task RefreshLoopAsync(CancellationToken ct)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(RefreshSeconds));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(ct))
+            {
+                await InvokeAsync(LoadAsync);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // circuit closed
+        }
+        catch (ObjectDisposedException)
+        {
+            // circuit disposed between ticks
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_cts is not null)
+        {
+            await _cts.CancelAsync();
+            _cts.Dispose();
+        }
+    }
+}

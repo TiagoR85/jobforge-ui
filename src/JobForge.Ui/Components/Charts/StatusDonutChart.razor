@@ -1,0 +1,38 @@
+@using System.Diagnostics.CodeAnalysis
+@using ApexCharts
+@attribute [ExcludeFromCodeCoverage]
+
+<ApexChart TItem="Slice" Options="_options" Height="260">
+    <ApexPointSeries TItem="Slice"
+                     Items="Slices"
+                     Name="Count"
+                     SeriesType="SeriesType.Donut"
+                     XValue="s => s.Label"
+                     YValue="s => s.Count" />
+</ApexChart>
+
+@code {
+    [Parameter, EditorRequired] public StatusCounts Counts { get; set; } = new(0, 0, 0, 0, 0);
+    [Inject] private IStringLocalizer<SharedResources> L { get; set; } = default!;
+
+    private sealed record Slice(string Label, int Count);
+
+    private IReadOnlyList<Slice> Slices => new List<Slice>
+    {
+        new(L["status_succeeded"], Counts.Succeeded),
+        new(L["status_failed"], Counts.Failed),
+        new(L["status_dead"], Counts.Dead),
+        new(L["status_running"], Counts.Running),
+        new(L["status_pending"], Counts.Pending)
+    };
+
+    private readonly ApexChartOptions<Slice> _options = new()
+    {
+        Chart = new Chart(),
+        Colors = ["var(--chart-2)", "var(--chart-5)", "var(--chart-4)", "var(--chart-1)", "var(--chart-3)"],
+        Labels = ["succeeded", "failed", "dead", "running", "pending"],
+        Legend = new Legend { Position = LegendPosition.Bottom },
+        Stroke = new Stroke { Width = 2, Colors = ["var(--card)"] },
+        DataLabels = new DataLabels { Enabled = true }
+    };
+}
