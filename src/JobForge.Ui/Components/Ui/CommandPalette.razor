@@ -1,0 +1,125 @@
+@implements IDisposable
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResources> L
+
+@if (_open)
+{
+    <div class="fixed inset-0 z-[100] flex items-start justify-center pt-[20vh]" data-testid="command-palette">
+        <div class="absolute inset-0 bg-black/60" @onclick="Close"></div>
+        <div class="relative mx-4 w-full max-w-lg overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background)] shadow-2xl">
+            <div class="flex items-center border-b border-[var(--border)] px-4">
+                <svg class="h-5 w-5 flex-shrink-0 text-[var(--muted-foreground)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input @ref="_input" data-testid="command-input" type="text"
+                       class="h-12 flex-1 bg-transparent px-3 text-sm focus:outline-none"
+                       placeholder="@(L["command_placeholder"])"
+                       value="@_term" @oninput="OnSearch" @onkeydown="OnKeyDown" />
+                <kbd class="rounded border border-[var(--border)] bg-[var(--secondary)] px-1.5 py-0.5 text-[10px] text-[var(--muted-foreground)]">ESC</kbd>
+            </div>
+
+            <div class="max-h-80 overflow-y-auto p-2">
+                @if (!_items.Any())
+                {
+                    <p class="py-8 text-center text-sm text-[var(--muted-foreground)]">@L["command_no_results"]</p>
+                }
+                else
+                {
+                    @foreach (var item in _items)
+                    {
+                        <button type="button" data-testid="command-item" data-href="@item.Href"
+                                class="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm hover:bg-[var(--secondary)]"
+                                @onclick="() => Execute(item)">
+                            <span>@L[item.LabelKey]</span>
+                            <span class="text-[10px] uppercase text-[var(--muted-foreground)]">
+                                @(item.Group == "pages" ? L["command_pages"] : L["command_actions"])
+                            </span>
+                        </button>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private static readonly (string LabelKey, string Href, string Group)[] All =
+    [
+        ("nav_overview", "/", "pages"),
+        ("nav_jobs", "/jobs", "pages"),
+        ("nav_new_job", "/jobs/new", "pages"),
+        ("nav_executions", "/executions", "pages"),
+        ("nav_dead_letters", "/executions?status=dead", "pages"),
+        ("nav_operations", "/operations", "pages"),
+        ("command_new_job", "/jobs/new", "actions"),
+        ("command_toggle_theme", "action:theme", "actions")
+    ];
+
+    private bool _open;
+    private string _term = "";
+    private ElementReference _input;
+    private DotNetObjectReference<CommandPalette>? _dotNetRef;
+    private List<(string LabelKey, string Href, string Group)> _items = All.ToList();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        _dotNetRef = DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("addKeydownListener", _dotNetRef);
+    }
+
+    public async Task OpenAsync()
+    {
+        _open = true;
+        _term = "";
+        _items = All.ToList();
+        StateHasChanged();
+        await Task.Delay(50);
+        try { await _input.FocusAsync(); } catch { }
+    }
+
+    [JSInvokable]
+    public Task Open() => OpenAsync();
+
+    private void Close()
+    {
+        _open = false;
+        _term = "";
+    }
+
+    private void OnSearch(ChangeEventArgs e)
+    {
+        _term = e.Value?.ToString() ?? "";
+        _items = string.IsNullOrWhiteSpace(_term)
+            ? All.ToList()
+            : All.Where(i => L[i.LabelKey].Value.Contains(_term, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            Close();
+        }
+    }
+
+    private void Execute((string LabelKey, string Href, string Group) item)
+    {
+        Close();
+        if (item.Href == "action:theme")
+        {
+            _ = JS.InvokeVoidAsync("toggleTheme");
+            return;
+        }
+
+        Navigation.NavigateTo(item.Href);
+    }
+
+    public void Dispose()
+    {
+        _dotNetRef?.Dispose();
+        _dotNetRef = null;
+    }
+}

@@ -8,6 +8,10 @@ public abstract class UiTestContext : BunitContext
 {
     protected UiTestContext()
     {
+        // Deterministic UI language for bUnit; tests override with CultureScope("pt-BR").
+        CultureInfo.CurrentUICulture = new CultureInfo("en");
+        CultureInfo.CurrentCulture = new CultureInfo("en");
+
         Services.AddLocalization();
         Services.AddSingleton(TimeProvider.System);
         JSInterop.Mode = JSRuntimeMode.Loose;
