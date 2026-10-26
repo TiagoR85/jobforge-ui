@@ -1,0 +1,83 @@
+@page "/operations"
+@using Microsoft.Extensions.Diagnostics.HealthChecks
+@inject HealthCheckService Health
+@inject IOptions<JobForgeOptions> Options
+@inject IOptions<UiOptions> UiOpt
+@inject IStringLocalizer<SharedResources> L
+
+<PageTitle>jobforge — @L["ops_title"]</PageTitle>
+
+<h1 class="mb-6 text-2xl font-bold">@L["ops_title"]</h1>
+
+<div class="grid gap-4 lg:grid-cols-2">
+    <Card>
+        <Header><h2 class="font-semibold">@L["ops_health"]</h2></Header>
+        <ChildContent>
+            @if (_report is null)
+            {
+                <p class="text-sm text-[var(--muted-foreground)]">@L["ops_checking"]</p>
+            }
+            else
+            {
+                <p class="text-lg font-semibold" data-testid="ops-status">@StatusLabel(_report.Status)</p>
+                <ul class="mt-3 space-y-2 text-sm">
+                    @foreach (var entry in _report.Entries)
+                    {
+                        <li class="flex items-center justify-between gap-3" data-testid="ops-check">
+                            <span class="font-medium">@entry.Key</span>
+                            <Badge Variant="@Variant(entry.Value.Status)">@StatusLabel(entry.Value.Status)</Badge>
+                        </li>
+                    }
+                </ul>
+                <Button Variant="secondary" Size="sm" TestId="ops-refresh" OnClick="CheckAsync">@L["common_refresh"]</Button>
+            }
+        </ChildContent>
+    </Card>
+
+    <Card>
+        <Header><h2 class="font-semibold">@L["ops_title"]</h2></Header>
+        <ChildContent>
+            <dl class="space-y-3 text-sm">
+                <div class="flex justify-between gap-4">
+                    <dt class="text-[var(--muted-foreground)]">@L["ops_base_url"]</dt>
+                    <dd class="font-mono" data-testid="ops-base-url">@TrimmedBaseUrl</dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                    <dt class="text-[var(--muted-foreground)]">@L["ops_client_id"]</dt>
+                    <dd class="font-mono">@Options.Value.ClientId</dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                    <dt class="text-[var(--muted-foreground)]">@L["ops_scopes"]</dt>
+                    <dd class="font-mono">@Options.Value.Scope</dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                    <dt class="text-[var(--muted-foreground)]">@L["ops_refresh"]</dt>
+                    <dd class="font-mono">@L["ops_seconds", UiOpt.Value.RefreshSeconds]</dd>
+                </div>
+            </dl>
+            <a class="mt-4 inline-block text-sm text-[var(--primary)] hover:underline"
+               data-testid="ops-metrics-link" target="_blank" rel="noopener noreferrer"
+               href="@($"{TrimmedBaseUrl}/metrics")">@L["ops_metrics"]</a>
+        </ChildContent>
+    </Card>
+</div>
+
+@code {
+    private HealthReport? _report;
+
+    private string TrimmedBaseUrl => Options.Value.BaseUrl.TrimEnd('/');
+
+    private string StatusLabel(HealthStatus status)
+        => L[$"ops_{status.ToString().ToLowerInvariant()}"];
+
+    private static string Variant(HealthStatus status) => status switch
+    {
+        HealthStatus.Healthy => "success",
+        HealthStatus.Degraded => "warning",
+        _ => "error"
+    };
+
+    protected override Task OnInitializedAsync() => CheckAsync();
+
+    private async Task CheckAsync() => _report = await Health.CheckHealthAsync();
+}

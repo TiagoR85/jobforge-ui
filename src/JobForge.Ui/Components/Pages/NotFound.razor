@@ -1,5 +1,11 @@
 ﻿@page "/not-found"
 @layout MainLayout
+@inject IStringLocalizer<SharedResources> L
 
-<h3>Not Found</h3>
-<p>Sorry, the content you are looking for does not exist.</p>
+<PageTitle>jobforge — @L["not_found_title"]</PageTitle>
+
+<Card Class="max-w-xl">
+    <h1 class="text-xl font-bold">@L["not_found_title"]</h1>
+    <p class="mt-2 text-sm text-[var(--muted-foreground)]">@L["not_found_body"]</p>
+    <a href="/" class="mt-4 inline-block text-sm text-[var(--primary)] hover:underline">@L["not_found_back"]</a>
+</Card>

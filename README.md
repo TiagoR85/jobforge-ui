@@ -4,7 +4,7 @@
 [![release](https://img.shields.io/github/v/release/TiagoR85/jobforge-ui)](https://github.com/TiagoR85/jobforge-ui/releases)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Blazor Server console for the **jobforge** family plus the hub `docker-compose.yml` that boots the whole demo: create and schedule HTTP jobs, run them on demand, watch executions stream back — all through the orchestrator's REST API as the OIDC confidential client `jobforge-console`.
+Blazor Server console for the **jobforge** family, built on the DashboardTheKingThePower shell, plus the hub `docker-compose.yml` that boots the whole demo: create and schedule HTTP jobs, run them on demand, watch executions stream back — all through the orchestrator's REST API as the OIDC confidential client `jobforge-console`.
 
 ```mermaid
 graph LR
@@ -19,7 +19,7 @@ graph LR
 
 ## Status
 
-Third and final repository of the jobforge family (spec §12–§19): orchestrator and runner are tagged `v1.0.0`, and this repo is the **demo hub** that composes all three from a clean clone.
+Third and final repository of the jobforge family (spec §12–§19): orchestrator and runner are tagged `v1.0.0`, and this repo is the **demo hub** that composes all three from a clean clone. The console is now **v1.1.0**: dashboard shell, overview, operations page and PT-BR/EN UI.
 
 ## Quickstart (≤5 min, Docker required)
 
@@ -40,11 +40,13 @@ End-to-end sanity check: create a job (name + webhook URL such as `http://orches
 
 | Route | Content |
 |---|---|
-| `/` | job definitions + badge of last execution + **Run now** + **Disable** |
-| `/jobs/new` | schedule form: name, URL, payload JSON, optional cron (Cronos pre-validated) + fresh `Idempotency-Key` per submit |
+| `/` | overview: KPIs, hourly executions chart, status donut, latest executions |
+| `/jobs` | job definitions, name search, last execution badge, **Run now**, **Disable** (confirmed) |
+| `/jobs/new` | schedule form with cron presets and next-run preview (Cronos, UTC) + fresh `Idempotency-Key` per submit |
 | `/executions` | paginated table, status filter (`?status=` syncs to the URL), auto-refresh 5s (polling) |
 | `/executions/{id}` | lifecycle timeline: scheduled/started/finished, attempt, HTTP status, duration, error |
 | `/executions?status=dead` | dead-letters view (same page — no duplicate screen) |
+| `/operations` | orchestrator health, API base URL, OIDC client, scopes, Prometheus link |
 
 ## Configuration
 
@@ -55,6 +57,15 @@ End-to-end sanity check: create a job (name + webhook URL such as `http://orches
 | `JobForge:ClientSecret` | *(empty — fail-fast)* | injected via `OIDC_CLIENT_SECRET` / `JobForge__ClientSecret` |
 | `JobForge:Scope` | `jobs:read jobs:write` | requested scopes |
 | `Ui:RefreshSeconds` | `5` | executions auto-refresh interval |
+
+UI language: PT-BR (default) and EN, switched in the header and persisted in a cookie.
+Styling: Tailwind CSS 4 compiled locally (`npm run build:css` in `src/JobForge.Ui`);
+the generated stylesheet is committed, so the container image needs no Node.
+Charts: Blazor-ApexCharts (basic area/donut features — no premium licence required).
+
+Reusing this console for another application: deploy another container with
+`JobForge__BaseUrl`, `JobForge__ClientId` and `JobForge__ClientSecret` pointing at that
+orchestrator (the OIDC client needs `jobs:read` and `jobs:write`). No code change needed.
 
 Health: `/health/live` (self), `/health/ready` (probes the orchestrator). Logging: NLog 6 JSON console (`svc=jobforge-ui`, override with `SERVICE_NAME`). No `/metrics` here — metrics live in orchestrator (`:8094/metrics`) and runner (`:8095/metrics`).
 
@@ -67,17 +78,24 @@ dotnet test tests/JobForge.Ui.Tests                             # with coverage 
 
 bUnit + WireMock only — no containers needed.
 
+When changing styles:
+
+```powershell
+cd src/JobForge.Ui; npm ci; npm run build:css
+```
+
 ## Decisions
 
 - [ADR-0001](docs/adr/ADR-0001-hub-git-context.md) — hub compose with git-context builds pinned to `v1.0.0`
 - [ADR-0002](docs/adr/ADR-0002-confidential-client-and-polling.md) — confidential client, in-memory token, 5s polling
 - [ADR-0003](docs/adr/ADR-0003-data-testid-contract.md) — `data-testid` as the stable test contract
+- [ADR-0004](docs/adr/ADR-0004-dashboard-shell-copy.md) — shell copied from the dashboard, no shared library
 
 ## Known deviation
 
 The orchestrator stores **one row per execution** (status transitions overwrite it), so `/executions/{id}` shows the lifecycle timeline of that row — attempt, HTTP status, duration and error of the last state — rather than a per-attempt history table. Per-attempt history joins the backlog below once the orchestrator keeps an attempts table.
 
-## Backlog (out of scope for v1.0.0)
+## Backlog
 
 DLQ replay from the UI · retry-topics · mTLS on the gRPC stream · compose profiles for a VPS · refresh tokens · full OTel traces · cron ticks <30s · dependent jobs (DAG) · multi-tenant · published-outbox purge · per-attempt execution history.
 

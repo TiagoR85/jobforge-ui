@@ -18,3 +18,21 @@ jobs:
     uses: TiagoR85/ci-pipeline-templates/.github/workflows/reusable-docker-scan.yml@v1
     with:
       image-name: jobforge-ui
+
+  css-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: src/JobForge.Ui/package-lock.json
+      - name: Install
+        working-directory: src/JobForge.Ui
+        run: npm ci
+      - name: Build CSS
+        working-directory: src/JobForge.Ui
+        run: npm run build:css
+      - name: Ensure committed CSS is up to date
+        run: git diff --exit-code -- src/JobForge.Ui/wwwroot/css/tailwind.css
