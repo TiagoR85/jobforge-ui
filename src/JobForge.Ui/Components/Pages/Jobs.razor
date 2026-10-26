@@ -135,6 +135,10 @@ else
         {
             _error = ex.Message;
         }
+        catch (HttpRequestException ex)
+        {
+            _error = ex.Message;
+        }
         finally
         {
             _loading = false;

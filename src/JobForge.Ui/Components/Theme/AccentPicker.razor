@@ -48,8 +48,23 @@
     private bool _open;
     private string _current = "blue";
 
-    protected override async Task OnInitializedAsync()
-        => _current = await JS.InvokeAsync<string>("getAccent");
+    // JS interop is unavailable during static prerender; resolve the accent after the circuit starts.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        try
+        {
+            _current = await JS.InvokeAsync<string>("getAccent");
+            StateHasChanged();
+        }
+        catch (InvalidOperationException)
+        {
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
 
     private async Task SetAsync(string accent)
     {

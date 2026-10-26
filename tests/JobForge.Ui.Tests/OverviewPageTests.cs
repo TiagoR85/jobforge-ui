@@ -22,4 +22,19 @@ public sealed class OverviewPageTests : UiTestContext
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("[data-testid=overview-empty]")));
         Assert.Equal("0", cut.Find("[data-testid=kpi-active-jobs]").TextContent.Trim());
     }
+
+    [Fact]
+    public void Transport_failure_does_not_crash_the_page()
+    {
+        var fake = new FakeJobForgeClient
+        {
+            JobsError = new HttpRequestException("connection refused")
+        };
+        Services.AddSingleton<IJobForgeClient>(fake);
+
+        var cut = Render<Overview>();
+
+        cut.WaitForAssertion(() => Assert.Contains("connection refused", cut.Markup));
+        Assert.NotNull(cut.Find("[data-testid=error-alert]"));
+    }
 }

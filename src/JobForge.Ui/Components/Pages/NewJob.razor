@@ -182,6 +182,10 @@
         {
             _formError = ex.Message;
         }
+        catch (HttpRequestException ex)
+        {
+            _formError = ex.Message;
+        }
         finally
         {
             _saving = false;
