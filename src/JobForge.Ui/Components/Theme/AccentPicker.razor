@@ -1,0 +1,60 @@
+@inject IJSRuntime JS
+@inject IStringLocalizer<SharedResources> L
+
+<div class="relative">
+    <button type="button"
+            class="rounded-lg p-2 text-[var(--foreground)] hover:bg-[var(--secondary)]"
+            title="@(L["header_accent"])"
+            aria-label="@(L["header_accent"])"
+            data-testid="accent-toggle"
+            @onclick="() => _open = !_open">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+        </svg>
+    </button>
+
+    @if (_open)
+    {
+        <div class="absolute right-0 top-full z-50 mt-2 rounded-lg border border-[var(--border)] bg-[var(--card)] p-3 shadow-lg">
+            <p class="mb-2 text-xs text-[var(--muted-foreground)]">@L["header_accent"]</p>
+            <div class="flex gap-2">
+                @foreach (var accent in Accents)
+                {
+                    <button type="button"
+                            data-testid="accent-option"
+                            data-accent="@accent.Key"
+                            class="h-6 w-6 rounded-full border-2 @(_current == accent.Key ? "border-white ring-2 ring-[var(--ring)]" : "border-transparent")"
+                            style="background-color: @accent.Value"
+                            @onclick="() => SetAsync(accent.Key)">
+                    </button>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private static readonly Dictionary<string, string> Accents = new()
+    {
+        ["emerald"] = "oklch(0.55 0.19 160)",
+        ["blue"] = "oklch(0.55 0.19 240)",
+        ["violet"] = "oklch(0.55 0.19 280)",
+        ["rose"] = "oklch(0.55 0.19 350)",
+        ["orange"] = "oklch(0.55 0.19 50)",
+        ["slate"] = "oklch(0.55 0.02 260)"
+    };
+
+    private bool _open;
+    private string _current = "blue";
+
+    protected override async Task OnInitializedAsync()
+        => _current = await JS.InvokeAsync<string>("getAccent");
+
+    private async Task SetAsync(string accent)
+    {
+        await JS.InvokeVoidAsync("setAccent", accent);
+        _current = accent;
+        _open = false;
+    }
+}

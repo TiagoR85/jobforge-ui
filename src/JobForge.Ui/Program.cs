@@ -34,6 +34,7 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 });
 
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<ToastService>();
 builder.Services.AddHttpClient<JobForgeTokenProvider>((sp, client) =>
 {
     var options = sp.GetRequiredService<JobForgeOptions>();
