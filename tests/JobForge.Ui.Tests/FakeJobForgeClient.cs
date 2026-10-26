@@ -27,6 +27,8 @@ public sealed class FakeJobForgeClient : IJobForgeClient
     public string? LastIdempotencyKey { get; private set; }
 
     public ExecutionPage Executions { get; set; } = new(1, 20, 0, []);
+    public Dictionary<string, ExecutionPage> ExecutionsByStatus { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public List<int> RequestedSizes { get; } = [];
     public Exception? ExecutionsError { get; set; }
     public int GetExecutionsCalls { get; private set; }
     public string? LastStatus { get; private set; }
@@ -70,10 +72,15 @@ public sealed class FakeJobForgeClient : IJobForgeClient
     public Task<ExecutionPage> GetExecutionsAsync(string? status, int page, int size, CancellationToken ct = default)
     {
         GetExecutionsCalls++;
+        RequestedSizes.Add(size);
         LastStatus = status;
         LastPage = page;
         LastSize = size;
         if (ExecutionsError is not null) return Task.FromException<ExecutionPage>(ExecutionsError);
+        if (status is not null && ExecutionsByStatus.TryGetValue(status, out var pageResult))
+        {
+            return Task.FromResult(pageResult);
+        }
         return Task.FromResult(Executions);
     }
 
