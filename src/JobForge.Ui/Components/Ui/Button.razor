@@ -1,0 +1,33 @@
+<button type="@Type"
+        class="@($"inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors {VariantClass} {SizeClass}")"
+        disabled="@Disabled"
+        data-testid="@TestId"
+        @onclick="OnClick">
+    @ChildContent
+</button>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string Variant { get; set; } = "primary";
+    [Parameter] public string Size { get; set; } = "md";
+    [Parameter] public string Type { get; set; } = "button";
+    [Parameter] public string? TestId { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    private string VariantClass => Variant switch
+    {
+        "primary" => "bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90",
+        "secondary" => "bg-[var(--secondary)] text-[var(--secondary-foreground)] border border-[var(--border)]",
+        "danger" => "bg-[var(--destructive)] text-white hover:opacity-90",
+        "ghost" => "hover:bg-[var(--secondary)]",
+        _ => "bg-[var(--primary)] text-[var(--primary-foreground)]"
+    };
+
+    private string SizeClass => Size switch
+    {
+        "sm" => "h-8 px-3 text-xs",
+        "lg" => "h-12 px-6",
+        _ => "h-10 px-4"
+    };
+}

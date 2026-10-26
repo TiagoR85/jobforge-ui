@@ -1,0 +1,22 @@
+@if (IsOpen)
+{
+    <div class="fixed inset-0 z-50 flex items-center justify-center" data-testid="modal">
+        <div class="absolute inset-0 bg-black/50" @onclick="OnClose"></div>
+        <div class="relative mx-4 w-full max-w-lg rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-xl">
+            @if (!string.IsNullOrWhiteSpace(Title))
+            {
+                <h2 class="mb-2 text-lg font-semibold">@Title</h2>
+            }
+            @ChildContent
+            <div class="mt-6 flex justify-end gap-2">@Footer</div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Footer { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+}

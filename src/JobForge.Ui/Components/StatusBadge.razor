@@ -1,15 +1,22 @@
-<span class="@CssClass" data-testid="status-badge" data-status="@Status">@(Status ?? "unknown")</span>
+@inject IStringLocalizer<SharedResources> L
+
+<span data-testid="status-badge" data-status="@Status">
+    <Badge Variant="@Variant">@Label</Badge>
+</span>
 
 @code {
     [Parameter, EditorRequired] public string? Status { get; set; }
 
-    private string CssClass => Status switch
+    private string Variant => Status switch
     {
-        "succeeded" => "badge text-bg-success",
-        "failed" => "badge text-bg-danger",
-        "dead" => "badge text-bg-dark",
-        "running" => "badge text-bg-primary",
-        "pending" => "badge text-bg-secondary",
-        _ => "badge text-bg-secondary"
+        "succeeded" => "success",
+        "failed" => "warning",
+        "dead" => "error",
+        "running" => "info",
+        _ => "neutral"
     };
+
+    private string Label => Status is "pending" or "running" or "succeeded" or "failed" or "dead"
+        ? L[$"status_{Status}"]
+        : L["status_unknown"];
 }
