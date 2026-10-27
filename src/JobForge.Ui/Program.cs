@@ -36,6 +36,7 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 });
 
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<EchoStore>();
 builder.Services.AddScoped<ToastService>();
 builder.Services.AddHttpClient<JobForgeTokenProvider>((sp, client) =>
 {
@@ -91,6 +92,22 @@ app.MapGet("/metrics", async (IHttpClientFactory factory, CancellationToken ct) 
     {
         return Results.StatusCode(StatusCodes.Status502BadGateway);
     }
+});
+
+// Test webhook: record what the runner sends so the hit is visible on /echo.
+app.MapPost("/echo/hook", async (HttpRequest request, EchoStore store, CancellationToken ct) =>
+{
+    // shortcut: bodies over 64 KB are truncated; fine for a manual smoke-test echo.
+    var buffer = new char[64_000];
+    using var reader = new StreamReader(request.Body);
+    var read = await reader.ReadBlockAsync(buffer.AsMemory(), ct);
+    var entry = new EchoEntry(
+        DateTimeOffset.UtcNow,
+        request.ContentType ?? "",
+        request.Headers.UserAgent.ToString(),
+        new string(buffer, 0, read));
+    store.Add(entry);
+    return Results.Json(new { received = entry.Body, contentType = entry.ContentType, at = entry.ReceivedAt });
 });
 
 app.MapRazorComponents<App>()

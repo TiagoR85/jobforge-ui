@@ -1,0 +1,46 @@
+@page "/echo"
+@inject EchoStore Store
+@inject IStringLocalizer<SharedResources> L
+
+<PageTitle>jobforge — @L["echo_title"]</PageTitle>
+
+<h1 class="mb-6 text-2xl font-bold">@L["echo_title"]</h1>
+
+<Card Class="max-w-3xl">
+    <ChildContent>
+        <p class="text-sm text-[var(--muted-foreground)]">@L["echo_hint"]</p>
+        <code class="mt-2 block rounded-lg bg-[var(--secondary)] p-3 font-mono text-sm" data-testid="echo-url">http://ui:8096/echo/hook</code>
+
+        @if (_entries.Count == 0)
+        {
+            <p class="mt-4 text-sm text-[var(--muted-foreground)]" data-testid="echo-empty">@L["echo_empty"]</p>
+        }
+        else
+        {
+            <ul class="mt-4 space-y-3">
+                @foreach (var entry in _entries)
+                {
+                    <li class="rounded-lg border border-[var(--border)] p-3" data-testid="echo-entry">
+                        <div class="flex flex-wrap justify-between gap-2 text-xs text-[var(--muted-foreground)]">
+                            <span>@L["echo_received_at"] @entry.ReceivedAt.ToLocalTime().ToString("g")</span>
+                            <span class="font-mono">@entry.ContentType</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(entry.UserAgent))
+                        {
+                            <div class="mt-1 font-mono text-xs text-[var(--muted-foreground)]">@L["echo_user_agent"]: @entry.UserAgent</div>
+                        }
+                        <pre class="mt-2 overflow-x-auto text-sm font-mono" data-testid="echo-body">@entry.Body</pre>
+                    </li>
+                }
+            </ul>
+        }
+
+        <Button Variant="secondary" Size="sm" TestId="echo-refresh" OnClick="() => _entries = Store.Snapshot()">@L["common_refresh"]</Button>
+    </ChildContent>
+</Card>
+
+@code {
+    private IReadOnlyList<EchoEntry> _entries = [];
+
+    protected override void OnInitialized() => _entries = Store.Snapshot();
+}

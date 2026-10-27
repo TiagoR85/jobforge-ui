@@ -130,4 +130,10 @@
   <data name="not_found_title" xml:space="preserve"><value>Not found</value></data>
   <data name="not_found_body" xml:space="preserve"><value>The page you are looking for does not exist.</value></data>
   <data name="not_found_back" xml:space="preserve"><value>Back to overview</value></data>
+  <data name="ops_echo" xml:space="preserve"><value>Test echo page</value></data>
+  <data name="echo_title" xml:space="preserve"><value>Test echo</value></data>
+  <data name="echo_hint" xml:space="preserve"><value>Create a job with this webhook URL; every hit shows up here.</value></data>
+  <data name="echo_empty" xml:space="preserve"><value>No requests received yet.</value></data>
+  <data name="echo_received_at" xml:space="preserve"><value>Received</value></data>
+  <data name="echo_user_agent" xml:space="preserve"><value>User agent</value></data>
 </root>

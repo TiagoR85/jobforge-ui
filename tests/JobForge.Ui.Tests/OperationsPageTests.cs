@@ -31,6 +31,7 @@ public sealed class OperationsPageTests : UiTestContext
         cut.WaitForAssertion(() => Assert.Contains("Healthy", cut.Find("[data-testid=ops-status]").TextContent));
         Assert.Contains("http://localhost:8094", cut.Find("[data-testid=ops-base-url]").TextContent);
         Assert.Equal("/metrics", cut.Find("[data-testid=ops-metrics-link]").GetAttribute("href"));
+        Assert.Equal("/echo", cut.Find("[data-testid=ops-echo-link]").GetAttribute("href"));
     }
 
     [Fact]
