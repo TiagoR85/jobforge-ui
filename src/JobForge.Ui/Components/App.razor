@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
+    <title>jobforge</title>
     <ResourcePreloader />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,7 +20,9 @@
 </head>
 
 <body>
-    <Routes @rendermode="InteractiveServer" />
+    @* No prerender: the initial HTML carries no component markers, so a browser extension or
+       security product that rewrites the page cannot break the first render batch. *@
+    <Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />
     <ReconnectModal />
     <script src="@Assets["js/theme.js"]"></script>
     <script src="@Assets["js/boot.js"]"></script>
