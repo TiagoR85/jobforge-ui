@@ -62,7 +62,7 @@ services:
 
   orchestrator:
     build:
-      context: https://github.com/TiagoR85/jobforge-orchestrator.git#v1.0.0
+      context: https://github.com/TiagoR85/jobforge-orchestrator.git#v1.1.1
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }

@@ -1,11 +1,11 @@
-# ADR-0001: Hub compose with git-context builds pinned to v1.0.0
+# ADR-0001: Hub compose with git-context builds pinned to release tags
 
 **Status:** Accepted  
 **Date:** 2026-10-14
 
 ## Decision
 
-`docker-compose.yml` in this repository builds the orchestrator and the runner directly from their GitHub sources pinned to a tag (`build.context: https://github.com/TiagoR85/jobforge-<service>.git#v1.0.0`) and builds the UI locally (`build: .`). `POSTGRES_PASSWORD` falls back to `jobforge-dev` via `${POSTGRES_PASSWORD:-jobforge-dev}` so the hub `.env.example` carries exactly one key: `OIDC_CLIENT_SECRET=`.
+`docker-compose.yml` in this repository builds the orchestrator and the runner directly from their GitHub sources pinned to a release tag (`build.context: https://github.com/TiagoR85/jobforge-<service>.git#<tag>`) and builds the UI locally (`build: .`). Current pins: orchestrator `v1.1.1` (business metrics), runner `v1.0.0`. `POSTGRES_PASSWORD` falls back to `jobforge-dev` via `${POSTGRES_PASSWORD:-jobforge-dev}` so the hub `.env.example` carries exactly one key: `OIDC_CLIENT_SECRET=`.
 
 ## Context
 

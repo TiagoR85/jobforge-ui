@@ -32,9 +32,9 @@ curl http://localhost:8096/health/live   # 200
 start http://localhost:8096
 ```
 
-The stack: orchestrator `:8094` (REST) + `:8097` (gRPC HTTP/2), runner `:8095`, console `:8096`, postgres `:5432`, redis `:6379`, kafka `:9092`. Orchestrator and runner are built from their `v1.0.0` tags (git-context builds, ADR-0001).
+The stack: orchestrator `:8094` (REST) + `:8097` (gRPC HTTP/2), runner `:8095`, console `:8096`, postgres `:5432`, redis `:6379`, kafka `:9092`. The orchestrator is built from its `v1.1.1` tag and the runner from `v1.0.0` (git-context builds, ADR-0001).
 
-End-to-end sanity check: create a job (name + webhook URL such as `http://orchestrator:8094/`), it executes within seconds and appears as `succeeded` under **Executions**.
+End-to-end sanity check: create a job with the webhook URL `http://ui:8096/echo/hook` (the console always sends POST), it executes within seconds and appears as `succeeded` under **Executions**; open `/echo` to see the payload and user agent that actually arrived.
 
 ## Routes
 
@@ -46,7 +46,8 @@ End-to-end sanity check: create a job (name + webhook URL such as `http://orches
 | `/executions` | paginated table, status filter (`?status=` syncs to the URL), auto-refresh 5s (polling) |
 | `/executions/{id}` | lifecycle timeline: scheduled/started/finished, attempt, HTTP status, duration, error |
 | `/executions?status=dead` | dead-letters view (same page — no duplicate screen) |
-| `/operations` | orchestrator health, API base URL, OIDC client, scopes, Prometheus link |
+| `/operations` | orchestrator health, API base URL, OIDC client, scopes, Prometheus and echo links |
+| `/echo` | test webhook: last 20 requests received (payload, time, user agent) |
 
 ## Configuration
 
@@ -67,7 +68,7 @@ Reusing this console for another application: deploy another container with
 `JobForge__BaseUrl`, `JobForge__ClientId` and `JobForge__ClientSecret` pointing at that
 orchestrator (the OIDC client needs `jobs:read` and `jobs:write`). No code change needed.
 
-Health: `/health/live` (self), `/health/ready` (probes the orchestrator). Logging: NLog 6 JSON console (`svc=jobforge-ui`, override with `SERVICE_NAME`). No `/metrics` here — metrics live in orchestrator (`:8094/metrics`) and runner (`:8095/metrics`).
+Health: `/health/live` (self), `/health/ready` (probes the orchestrator). Logging: NLog 6 JSON console (`svc=jobforge-ui`, override with `SERVICE_NAME`). `/metrics` here proxies the orchestrator's Prometheus endpoint, so the Operations link works from the browser; the runner exposes its own at `:8095/metrics`.
 
 ## Running tests
 
