@@ -46,6 +46,20 @@ services:
       timeout: 5s
       retries: 20
 
+  kafka-init:
+    image: apache/kafka:3.9.0
+    depends_on:
+      kafka: { condition: service_healthy }
+    command:
+      - /bin/sh
+      - -c
+      - >
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists
+        --topic jobs.dispatch --partitions 3 --replication-factor 1 &&
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists
+        --topic jobs.dead --partitions 3 --replication-factor 1
+    restart: "no"
+
   orchestrator:
     build:
       context: https://github.com/TiagoR85/jobforge-orchestrator.git#v1.0.0
@@ -53,6 +67,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
       kafka: { condition: service_healthy }
+      kafka-init: { condition: service_completed_successfully }
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=jobforge;Username=jobforge;Password=${POSTGRES_PASSWORD:-jobforge-dev}
@@ -79,6 +94,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
       kafka: { condition: service_healthy }
+      kafka-init: { condition: service_completed_successfully }
       orchestrator: { condition: service_healthy }
     environment:
       ASPNETCORE_URLS: http://+:8095
