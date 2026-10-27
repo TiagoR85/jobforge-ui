@@ -88,12 +88,16 @@ else
     private string? _error;
     private bool _loading;
     private CancellationTokenSource? _cts;
+    private CancellationToken _token;
 
     protected override async Task OnInitializedAsync()
     {
         _cts = new CancellationTokenSource();
+        // Capture the token before awaiting: the prerendered instance is disposed when the
+        // interactive circuit takes over, and .Token on a disposed source throws.
+        _token = _cts.Token;
         await LoadAsync();
-        _ = RefreshLoopAsync(_cts.Token);
+        _ = RefreshLoopAsync(_token);
     }
 
     private async Task LoadAsync()
@@ -102,9 +106,8 @@ else
         _loading = true;
         try
         {
-            var token = _cts?.Token ?? CancellationToken.None;
-            _metrics = await OverviewData.LoadAsync(Client, Clock, token);
-            var page = await Client.GetExecutionsAsync(null, 1, 10, token);
+            _metrics = await OverviewData.LoadAsync(Client, Clock, _token);
+            var page = await Client.GetExecutionsAsync(null, 1, 10, _token);
             _recent = page.Items;
             _error = null;
         }
