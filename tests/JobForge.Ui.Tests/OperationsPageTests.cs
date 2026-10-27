@@ -12,13 +12,13 @@ public sealed class OperationsPageTests : UiTestContext
     {
         Services.AddHealthChecks()
             .AddCheck("orchestrator", () => new HealthCheckResult(status, "checked"));
-        Services.AddSingleton(Options.Create(new JobForgeOptions
+        Services.AddSingleton(new JobForgeOptions
         {
             BaseUrl = "http://localhost:8094/",
             ClientId = "jobforge-console",
             ClientSecret = secret,
             Scope = "jobs:read jobs:write"
-        }));
+        });
         Services.AddSingleton(Options.Create(new UiOptions { RefreshSeconds = 5 }));
     }
 
@@ -30,7 +30,7 @@ public sealed class OperationsPageTests : UiTestContext
 
         cut.WaitForAssertion(() => Assert.Contains("Healthy", cut.Find("[data-testid=ops-status]").TextContent));
         Assert.Contains("http://localhost:8094", cut.Find("[data-testid=ops-base-url]").TextContent);
-        Assert.Contains("http://localhost:8094/metrics", cut.Find("[data-testid=ops-metrics-link]").GetAttribute("href"));
+        Assert.Equal("/metrics", cut.Find("[data-testid=ops-metrics-link]").GetAttribute("href"));
     }
 
     [Fact]

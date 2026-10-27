@@ -1,7 +1,7 @@
 @page "/operations"
 @using Microsoft.Extensions.Diagnostics.HealthChecks
 @inject HealthCheckService Health
-@inject IOptions<JobForgeOptions> Options
+@inject JobForgeOptions Options
 @inject IOptions<UiOptions> UiOpt
 @inject IStringLocalizer<SharedResources> L
 
@@ -44,11 +44,11 @@
                 </div>
                 <div class="flex justify-between gap-4">
                     <dt class="text-[var(--muted-foreground)]">@L["ops_client_id"]</dt>
-                    <dd class="font-mono">@Options.Value.ClientId</dd>
+                    <dd class="font-mono">@Options.ClientId</dd>
                 </div>
                 <div class="flex justify-between gap-4">
                     <dt class="text-[var(--muted-foreground)]">@L["ops_scopes"]</dt>
-                    <dd class="font-mono">@Options.Value.Scope</dd>
+                    <dd class="font-mono">@Options.Scope</dd>
                 </div>
                 <div class="flex justify-between gap-4">
                     <dt class="text-[var(--muted-foreground)]">@L["ops_refresh"]</dt>
@@ -57,7 +57,7 @@
             </dl>
             <a class="mt-4 inline-block text-sm text-[var(--primary)] hover:underline"
                data-testid="ops-metrics-link" target="_blank" rel="noopener noreferrer"
-               href="@($"{TrimmedBaseUrl}/metrics")">@L["ops_metrics"]</a>
+               href="/metrics">@L["ops_metrics"]</a>
         </ChildContent>
     </Card>
 </div>
@@ -65,7 +65,7 @@
 @code {
     private HealthReport? _report;
 
-    private string TrimmedBaseUrl => Options.Value.BaseUrl.TrimEnd('/');
+    private string TrimmedBaseUrl => Options.BaseUrl.TrimEnd('/');
 
     private string StatusLabel(HealthStatus status)
         => L[$"ops_{status.ToString().ToLowerInvariant()}"];

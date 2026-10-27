@@ -78,6 +78,21 @@ app.MapGet("/culture/set", (HttpContext http, string c, string? redirect) =>
     return Results.LocalRedirect(CultureCookie.SafeRedirect(redirect));
 });
 
+// The orchestrator lives on an internal host in containers; expose its metrics through the UI
+// so the Operations link stays reachable from the browser.
+app.MapGet("/metrics", async (IHttpClientFactory factory, CancellationToken ct) =>
+{
+    try
+    {
+        var body = await factory.CreateClient("JobForgeApi").GetStringAsync("/metrics", ct);
+        return Results.Text(body, "text/plain; version=0.0.4; charset=utf-8");
+    }
+    catch (HttpRequestException)
+    {
+        return Results.StatusCode(StatusCodes.Status502BadGateway);
+    }
+});
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
