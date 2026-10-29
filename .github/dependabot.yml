@@ -9,6 +9,11 @@ updates:
       directory: "/"
       schedule:
         interval: "weekly"
+      # NLog + NLog.Web.AspNetCore must move together (NU1605 otherwise)
+      groups:
+        nlog:
+          patterns:
+            - "NLog*"
     - package-ecosystem: "docker"
       directory: "/"
       schedule:
