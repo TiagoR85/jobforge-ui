@@ -8,7 +8,7 @@ COPY . .
 # so a restore limited to the csproj would publish without wwwroot/_framework (blazor.web.js).
 RUN dotnet publish "src/JobForge.Ui/JobForge.Ui.csproj" -c Release -o /app
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:11.0 AS final
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
